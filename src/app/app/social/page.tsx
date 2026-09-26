@@ -1,25 +1,21 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { setPacked } from "@/app/app/actions";
 import { SocialChecklist } from "@/components/app/social-checklist";
 import { BackLink, Card, PageTitle } from "@/components/app/ui";
 import { socialChecklist } from "@/lib/domain/social-check";
-import { requireUser } from "@/lib/server/auth";
-import { getCase, latestProfile } from "@/lib/server/repo";
+import { requireCase } from "@/lib/server/case-access";
+import { latestProfile } from "@/lib/server/repo";
 
 export const metadata = { title: "Social media check" };
 
-export default async function SocialPage(props: PageProps<"/app/cases/[id]/social">) {
-  const { id } = await props.params;
-  const { supabase } = await requireUser(`/app/cases/${id}/social`);
-  const caseRow = await getCase(supabase, id);
-  if (!caseRow) notFound();
+export default async function SocialPage() {
+  const { supabase, id, caseRow } = await requireCase("/app/social");
   const current = await latestProfile(supabase, id);
   const student = caseRow.visa_type === "F1";
 
   return (
     <>
-      <BackLink href={`/app/cases/${id}`}>{caseRow.applicant_name}</BackLink>
+      <BackLink href={`/app`}>{caseRow.applicant_name}</BackLink>
       <PageTitle eyebrow="Social media check" title="Do your profiles tell the same story?">
         {student
           ? "Student applicants must make their social media public, and officers check it matches the application. "
@@ -28,7 +24,7 @@ export default async function SocialPage(props: PageProps<"/app/cases/[id]/socia
       </PageTitle>
       {!current ? (
         <p className="text-sm">
-          First, <Link className="underline" href={`/app/cases/${id}/profile`}>confirm your facts</Link>: this list is built from them.
+          First, <Link className="underline" href={`/app/profile`}>confirm your facts</Link>: this list is built from them.
         </p>
       ) : (
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">

@@ -1,3 +1,5 @@
+import { SortableTable, type SortValue } from "./sortable-table";
+
 export function Stat({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
     <div className="doc p-5">
@@ -18,8 +20,22 @@ export function Section({ title, note, children }: { title: string; note?: strin
   );
 }
 
-export function Table({ head, rows, empty = "Nothing yet." }: { head: string[]; rows: React.ReactNode[][]; empty?: string }) {
+export function Table({
+  head,
+  rows,
+  empty = "Nothing yet.",
+  sortValues,
+  initialSort,
+}: {
+  head: string[];
+  rows: React.ReactNode[][];
+  empty?: string;
+  /** Plain values to sort each column by (null where a column shouldn't sort). Makes the table sortable. */
+  sortValues?: SortValue[][];
+  initialSort?: { col: number; dir: "asc" | "desc" };
+}) {
   if (!rows.length) return <p className="text-sm text-muted">{empty}</p>;
+  if (sortValues) return <SortableTable head={head} rows={rows} sortValues={sortValues} initial={initialSort} />;
   return (
     <div className="overflow-x-auto rounded-[4px] border border-line">
       <table className="w-full text-left text-sm">

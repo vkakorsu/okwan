@@ -5,7 +5,6 @@ import { LEVEL_LABELS, type Readiness } from "@/lib/domain/readiness";
 
 /** The top of a case: who and what it's for, readiness, and the interview countdown. */
 export function CaseHeader({
-  caseId,
   visaLabel,
   subtitle,
   name,
@@ -16,7 +15,6 @@ export function CaseHeader({
   days,
   setDate,
 }: {
-  caseId: string;
   visaLabel: string;
   subtitle: string | null;
   name: string;
@@ -38,14 +36,14 @@ export function CaseHeader({
           </p>
           <h1 className="font-display mt-2 text-[clamp(2rem,4.4vw,3.4rem)] uppercase leading-[0.95]">{name}</h1>
           <div className="mt-5 flex flex-wrap items-center gap-2 text-sm">
-            <Link href={`/app/cases/${caseId}/profile`} className="rounded-[3px] border border-ink px-3 py-1.5 font-semibold hover:bg-ink hover:text-on-ink">
+            <Link href={`/app/profile`} className="rounded-[3px] border border-ink px-3 py-1.5 font-semibold hover:bg-ink hover:text-on-ink">
               {factsVersion ? "Your facts" : "Confirm your facts"}
             </Link>
-            <Link href={`/app/cases/${caseId}/documents`} className="rounded-[3px] border border-ink px-3 py-1.5 font-semibold hover:bg-ink hover:text-on-ink">
+            <Link href={`/app/documents`} className="rounded-[3px] border border-ink px-3 py-1.5 font-semibold hover:bg-ink hover:text-on-ink">
               Documents <span className="font-normal text-muted">· {docCount}</span>
             </Link>
             {factsVersion && (
-              <Link href={`/app/cases/${caseId}/facts`} className="rounded-[3px] border border-ink px-3 py-1.5 font-semibold hover:bg-ink hover:text-on-ink">
+              <Link href={`/app/facts`} className="rounded-[3px] border border-ink px-3 py-1.5 font-semibold hover:bg-ink hover:text-on-ink">
                 Know your file
               </Link>
             )}
@@ -73,7 +71,7 @@ export function CaseHeader({
           </p>
           <p className="mt-1 text-[11px] text-muted">
             How prepared you are, not a chance of approval.{" "}
-            <Link href={`/app/cases/${caseId}/progress`} className="underline underline-offset-2">
+            <Link href={`/app/progress`} className="underline underline-offset-2">
               See progress
             </Link>
           </p>

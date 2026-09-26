@@ -126,7 +126,7 @@ export default async function DebriefPage(props: PageProps<"/app/sessions/[id]/d
   return (
     <>
       {grading && <AutoRefresh />}
-      <BackLink href={`/app/cases/${s.case_id}`}>Back to your prep page</BackLink>
+      <BackLink href={`/app`}>Back to your prep page</BackLink>
       {notice === "regrade-limit" && (
         <p role="status" className="mb-6 text-sm text-refused">You&rsquo;ve reached the re-grade limit for this session.</p>
       )}
@@ -259,12 +259,12 @@ export default async function DebriefPage(props: PageProps<"/app/sessions/[id]/d
                 <>
                   <h2 className="font-display mt-1 text-2xl uppercase">Keep practising</h2>
                   <p className="mt-1 text-sm text-muted">You&rsquo;ve seen what to fix. A pack gives you more interviews and drills with new officers.</p>
-                  <Link href={`/app/cases/${s.case_id}/pass`} className="mt-4 inline-block rounded-[3px] bg-ink px-5 py-2.5 text-sm font-semibold text-on-ink hover:bg-stamp">
+                  <Link href={`/app/pass`} className="mt-4 inline-block rounded-[3px] bg-ink px-5 py-2.5 text-sm font-semibold text-on-ink hover:bg-stamp">
                     Get interviews →
                   </Link>
                 </>
               )}
-              <Link href={`/app/cases/${s.case_id}`} className="mt-4 block text-sm underline underline-offset-4">
+              <Link href={`/app`} className="mt-4 block text-sm underline underline-offset-4">
                 Back to your case
               </Link>
             </Card>

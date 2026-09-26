@@ -1,13 +1,12 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { ReadinessChart } from "@/components/app/readiness-chart";
 import { BackLink, Card, PageTitle } from "@/components/app/ui";
 import type { AnswerQuality } from "@/lib/domain/director";
 import { progress } from "@/lib/domain/progress";
 import { LEVEL_LABELS, readiness, readinessTopics, type TopicStatus } from "@/lib/domain/readiness";
 import { formatDate, modeLabel, topicLabel } from "@/lib/labels";
-import { requireUser } from "@/lib/server/auth";
-import { getCase, latestProfile, pastSessions } from "@/lib/server/repo";
+import { requireCase } from "@/lib/server/case-access";
+import { latestProfile, pastSessions } from "@/lib/server/repo";
 
 export const metadata = { title: "Progress" };
 
@@ -20,11 +19,8 @@ const CELL: Record<AnswerQuality, { glyph: string; cls: string; label: string }>
 };
 const STATUS: Record<TopicStatus, string> = { solid: "Solid", improving: "Improving", weak: "Weak last time", untested: "Not asked yet" };
 
-export default async function ProgressPage(props: PageProps<"/app/cases/[id]/progress">) {
-  const { id } = await props.params;
-  const { supabase } = await requireUser(`/app/cases/${id}/progress`);
-  const caseRow = await getCase(supabase, id);
-  if (!caseRow) notFound();
+export default async function ProgressPage() {
+  const { supabase, id, caseRow } = await requireCase("/app/progress");
   const [current, history] = await Promise.all([latestProfile(supabase, id), pastSessions(supabase, id)]);
   const topics = current ? readinessTopics(current.profile) : [];
   const now = readiness(history, topics);
@@ -33,7 +29,7 @@ export default async function ProgressPage(props: PageProps<"/app/cases/[id]/pro
 
   return (
     <>
-      <BackLink href={`/app/cases/${id}`}>{caseRow.applicant_name}</BackLink>
+      <BackLink href={`/app`}>{caseRow.applicant_name}</BackLink>
       <PageTitle eyebrow="Progress" title="How your readiness has moved">
         Readiness after each session, and how every topic went, session by session. It measures preparation, not your chance of approval.
       </PageTitle>

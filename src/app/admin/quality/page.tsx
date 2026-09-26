@@ -74,6 +74,9 @@ export default async function AdminQuality() {
   }
   const sharing = [...byCase].filter(([, v]) => v.fps.size >= 3).sort((a, b) => b[1].fps.size - a[1].fps.size);
 
+  // Worst first: the share of weak or contradictory answers. Sortable by any column.
+  const struggle = [...probes].sort((a, b) => (b[1].weak + b[1].contradiction) / b[1].n - (a[1].weak + a[1].contradiction) / a[1].n);
+
   // A sample of how the question is asked, with case details left as "…".
   const sample = (id: string) => {
     try {
@@ -120,15 +123,14 @@ export default async function AdminQuality() {
       <Section title="Where applicants struggle" note="Weak or contradictory answers by topic. Topics with a high share are candidates for new drills, guides and SEO content.">
         <Table
           head={["Topic", "Sample question", "Answers", "Weak", "Contradiction"]}
-          rows={[...probes]
-            .sort((a, b) => (b[1].weak + b[1].contradiction) / b[1].n - (a[1].weak + a[1].contradiction) / a[1].n)
-            .map(([id, v]) => [
-              topicLabel(id),
-              <span key="q" className="text-muted">{sample(id)}</span>,
-              v.n,
-              pct(v.weak, v.n),
-              pct(v.contradiction, v.n),
-            ])}
+          rows={struggle.map(([id, v]) => [
+            topicLabel(id),
+            <span key="q" className="text-muted">{sample(id)}</span>,
+            v.n,
+            pct(v.weak, v.n),
+            pct(v.contradiction, v.n),
+          ])}
+          sortValues={struggle.map(([id, v]) => [topicLabel(id), null, v.n, v.weak / v.n, v.contradiction / v.n])}
           empty="No graded answers yet."
         />
       </Section>
@@ -144,6 +146,7 @@ export default async function AdminQuality() {
             v.fps.size,
             v.n,
           ])}
+          sortValues={sharing.map(([caseId, v]) => [caseId, v.fps.size, v.n])}
           empty="Nothing unusual."
         />
       </Section>

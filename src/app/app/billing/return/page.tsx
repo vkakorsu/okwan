@@ -19,5 +19,5 @@ export default async function BillingReturn(props: PageProps<"/app/billing/retur
   } catch (e) {
     console.error("billing return", e);
   }
-  redirect(caseId ? `/app/cases/${caseId}?notice=${ok ? "paid" : "payment-pending"}` : "/app");
+  redirect(caseId ? `/app?notice=${ok ? "paid" : "payment-pending"}` : "/app");
 }

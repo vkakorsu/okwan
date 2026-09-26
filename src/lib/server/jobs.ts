@@ -43,7 +43,7 @@ export async function runExtraction(documentId: string) {
         }),
     ]);
     // Never persist raw passport numbers; only the last four digits live on the case.
-    const { appointment, documentLooksLike, notes, legibility, unreadable, ...profileFacts } = facts;
+    const { appointment, documentLooksLike, notes, legibility, unreadable, passportLast4, ds160Part, ...profileFacts } = facts;
     // A statement, sponsor letter or deed in someone else's name describes them, not the applicant.
     if (THIRD_PARTY_KINDS.has(doc.kind)) delete profileFacts.applicant;
 
@@ -68,7 +68,11 @@ export async function runExtraction(documentId: string) {
       profileFacts.funding = funding;
     }
 
-    const { data: caseRow } = await db.from("cases").select("draft_profile, interview_at").eq("id", doc.case_id).single();
+    const { data: caseRow } = await db
+      .from("cases")
+      .select("draft_profile, interview_at, passport_last4, identity_locked_at")
+      .eq("id", doc.case_id)
+      .single();
     const existing = (caseRow?.draft_profile ?? {}) as Record<string, unknown>;
     const { merged, conflicts } = mergeDraft(existing, profileFacts, doc.kind);
     // Reading a document again replaces its earlier disagreements.
@@ -107,6 +111,13 @@ export async function runExtraction(documentId: string) {
       );
     }
 
+    // The passport bio page gives the last 4 characters of the number: the only part ever kept.
+    // Once the identity is locked it can't change (a database trigger enforces this too).
+    const last4 = passportLast4?.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (doc.kind === "passport_bio" && last4?.length === 4 && !caseRow?.passport_last4 && !caseRow?.identity_locked_at) {
+      await db.from("cases").update({ passport_last4: last4 }).eq("id", doc.case_id);
+    }
+
     // An appointment confirmation fills in the interview date (for the countdown only).
     if (doc.kind === "appointment_confirmation" && appointment?.date && !caseRow?.interview_at) {
       const parsed = new Date(appointment.date);
@@ -117,7 +128,14 @@ export async function runExtraction(documentId: string) {
     await db
       .from("documents")
       .update({
-        extraction: { documentLooksLike, facts: profileFacts, legibility, unreadable, transcript: fullText ? "ok" : "failed" },
+        extraction: {
+          documentLooksLike,
+          facts: profileFacts,
+          legibility,
+          unreadable,
+          transcript: fullText ? "ok" : "failed",
+          ...(doc.kind === "ds160" && ds160Part ? { ds160Part } : {}),
+        },
         full_text: fullText ? redactIdentifiers(fullText).slice(0, 60_000) : null,
         extraction_status: "done",
         extraction_error: null,

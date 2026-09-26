@@ -105,6 +105,7 @@ export function ProfileForm({
       <Field label="Full name"><input name="applicant.fullName" defaultValue={v("applicant.fullName") || applicantName} className={inputCls} /></Field>
       <Field label="First name (what you're called)"><input name="applicant.firstName" defaultValue={v("applicant.firstName")} className={inputCls} required /></Field>
       <Field label="Date of birth"><input name="applicant.dateOfBirth" type="date" defaultValue={v("applicant.dateOfBirth")} className={inputCls} /></Field>
+      <Field label="Passport expiry date"><input name="applicant.passportExpiry" type="date" defaultValue={v("applicant.passportExpiry")} className={inputCls} /></Field>
       <Field label="Nationality" hint="Leave empty if Ghanaian"><input name="applicant.nationality" defaultValue={v("applicant.nationality")} className={inputCls} /></Field>
       <Field label="Age"><input name="applicant.age" type="number" min={10} max={110} defaultValue={v("applicant.age")} className={inputCls} required /></Field>
       <Field label="Marital status">

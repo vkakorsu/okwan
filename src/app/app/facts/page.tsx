@@ -1,21 +1,17 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { Flashcards } from "@/components/app/flashcards";
 import { PrintButton } from "@/components/app/print-button";
 import { BackLink, Card, PageTitle } from "@/components/app/ui";
 import { scanCase } from "@/lib/domain/case-scan";
 import { factSheet, flashcards } from "@/lib/domain/fact-sheet";
 import { documentLabel, isOnScreen } from "@/lib/domain/notes";
-import { requireUser } from "@/lib/server/auth";
-import { getCase, latestProfile } from "@/lib/server/repo";
+import { requireCase } from "@/lib/server/case-access";
+import { latestProfile } from "@/lib/server/repo";
 
 export const metadata = { title: "Know your file" };
 
-export default async function FactsPage(props: PageProps<"/app/cases/[id]/facts">) {
-  const { id } = await props.params;
-  const { supabase } = await requireUser(`/app/cases/${id}/facts`);
-  const caseRow = await getCase(supabase, id);
-  if (!caseRow) notFound();
+export default async function FactsPage() {
+  const { supabase, id, caseRow } = await requireCase("/app/facts");
   const current = await latestProfile(supabase, id);
   const { data: notes } = await supabase
     .from("case_notes")
@@ -27,10 +23,10 @@ export default async function FactsPage(props: PageProps<"/app/cases/[id]/facts"
   if (!current) {
     return (
       <>
-        <BackLink href={`/app/cases/${id}`}>{caseRow.applicant_name}</BackLink>
+        <BackLink href={`/app`}>{caseRow.applicant_name}</BackLink>
         <PageTitle eyebrow="Know your file" title="Confirm your facts first">
           This sheet is built from the facts you confirm.{" "}
-          <Link className="underline" href={`/app/cases/${id}/profile`}>
+          <Link className="underline" href={`/app/profile`}>
             Confirm them now
           </Link>
           .
@@ -46,7 +42,7 @@ export default async function FactsPage(props: PageProps<"/app/cases/[id]/facts"
   return (
     <>
       <div className="print:hidden">
-        <BackLink href={`/app/cases/${id}`}>{caseRow.applicant_name}</BackLink>
+        <BackLink href={`/app`}>{caseRow.applicant_name}</BackLink>
       </div>
       <PageTitle eyebrow="Know your file" title="What the officer has on screen">
         Officers check what you say against your DS-160 and I-20. Know these facts cold, especially the numbers and dates in
@@ -112,7 +108,7 @@ export default async function FactsPage(props: PageProps<"/app/cases/[id]/facts"
             </Card>
           )}
           <p className="text-xs text-muted">
-            If anything here is wrong, <Link className="underline" href={`/app/cases/${id}/profile`}>correct your facts</Link>, and make sure your
+            If anything here is wrong, <Link className="underline" href={`/app/profile`}>correct your facts</Link>, and make sure your
             DS-160 says the same thing.
           </p>
         </div>

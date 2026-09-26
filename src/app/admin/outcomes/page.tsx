@@ -30,6 +30,8 @@ export default async function AdminOutcomes() {
   const freq = new Map<string, number>();
   for (const q of questions) freq.set(q.toLowerCase(), (freq.get(q.toLowerCase()) ?? 0) + 1);
 
+  const topReported = [...freq].sort((a, b) => b[1] - a[1]).slice(0, 100);
+
   return (
     <>
       <PageHead title="Real outcomes">
@@ -56,7 +58,8 @@ export default async function AdminOutcomes() {
       <Section title="Questions applicants say they were asked" note="Only from users who consented. This feeds the probe taxonomy and the Reported Questions pages.">
         <Table
           head={["Question", "Times reported"]}
-          rows={[...freq].sort((a, b) => b[1] - a[1]).slice(0, 100).map(([q, n]) => [q, n])}
+          rows={topReported.map(([q, n]) => [q, n])}
+          sortValues={topReported.map(([q, n]) => [q, n])}
           empty="None yet."
         />
       </Section>

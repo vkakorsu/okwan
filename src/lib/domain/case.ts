@@ -57,6 +57,8 @@ export const CaseProfile = z.object({
     dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     /** Empty means Ghanaian. Others applying in Accra must show they live in Ghana. */
     nationality: z.string().max(60).optional(),
+    /** YYYY-MM-DD, from the passport bio page. */
+    passportExpiry: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     age: z.number().int().min(10).max(110),
     maritalStatus: z.enum(["single", "married", "divorced", "widowed"]),
     children: z.number().int().min(0).max(20).default(0),

@@ -22,6 +22,7 @@ export const ExtractedFacts = z.object({
       fullName: z.string().max(120),
       dateOfBirth: z.string().max(10),
       nationality: z.string().max(60),
+      passportExpiry: z.string().max(10),
       age: z.number().int(),
       maritalStatus: z.enum(["single", "married", "divorced", "widowed"]),
       children: z.number().int(),
@@ -113,6 +114,10 @@ export const ExtractedFacts = z.object({
     .optional(),
   usContacts: z.array(UsContact).max(10).optional(),
   appointment: z.object({ date: z.string().max(40), post: z.string().max(60) }).partial().optional(),
+  /** Passport bio page: the last 4 characters of the passport number, never more. */
+  passportLast4: z.string().max(4).optional(),
+  /** DS-160: the full answers, or only the one-page confirmation (which holds almost nothing). */
+  ds160Part: z.enum(["full_answers", "confirmation_page"]).optional(),
   /** Facts specific to this applicant that the fields above can't hold. */
   notes: z.array(ExtractedNote).max(8).optional(),
 });

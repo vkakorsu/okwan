@@ -44,6 +44,7 @@ export function factSheet(c: CaseProfile): FactSection[] {
     section("You", [
       a.fullName && { label: "Full name", value: a.fullName },
       a.dateOfBirth && { label: "Date of birth", value: a.dateOfBirth, key: true },
+      a.passportExpiry && { label: "Passport expires", value: a.passportExpiry, key: true },
       { label: "Age", value: String(a.age) },
       a.nationality && { label: "Nationality", value: a.nationality },
       { label: "Marital status", value: cap(a.maritalStatus) },

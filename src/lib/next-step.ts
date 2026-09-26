@@ -47,14 +47,14 @@ export function nextStep(i: NextStepInput): NextStep {
     rehearsal: rehearsed,
   };
   const step = (id: string, title: string, body: string, action: NextStepAction): NextStep => ({ id, title, body, action, progress });
-  const buy = { kind: "link" as const, href: `/app/cases/${i.caseId}/pass`, label: "Get interviews" };
+  const buy = { kind: "link" as const, href: `/app/pass`, label: "Get interviews" };
   const days = i.daysToInterview;
 
   // The day has passed: the most useful thing now is the result.
   if (days !== null && days < 0 && !i.outcomeReported) {
     return step("outcome", "How did it go?", "Tell us the result and the questions you were asked. It makes the officer more realistic for the next applicant.", {
       kind: "link",
-      href: `/app/cases/${i.caseId}#outcome`,
+      href: `/app#outcome`,
       label: "Report your result",
     });
   }
@@ -66,26 +66,26 @@ export function nextStep(i: NextStepInput): NextStep {
         "documents",
         "Upload your documents",
         "Your DS-160, I-20 or invitation, and bank statements. The officer uses what's in them, so the questions are about you, not anyone else.",
-        { kind: "link", href: `/app/cases/${i.caseId}/documents`, label: "Upload documents" },
+        { kind: "link", href: `/app/documents`, label: "Upload documents" },
       );
     }
     if (i.documents.some((d) => d.status === "pending")) {
       return step("reading", "Reading your documents", "This takes a minute. You can upload more while you wait.", {
         kind: "link",
-        href: `/app/cases/${i.caseId}/documents`,
+        href: `/app/documents`,
         label: "See documents",
       });
     }
     return step("facts", "Review your facts", "Check what we read, fix anything wrong, and keep the notes that are true. The officer only uses what you confirm.", {
       kind: "link",
-      href: `/app/cases/${i.caseId}/profile`,
+      href: `/app/profile`,
       label: "Review facts",
     });
   }
   if (i.pendingNotes > 0 && !progress.firstInterview) {
     return step("notes", `Keep or remove ${i.pendingNotes} note${i.pendingNotes === 1 ? "" : "s"} from your documents`, "Details only you have. The officer asks about the ones you keep.", {
       kind: "link",
-      href: `/app/cases/${i.caseId}/profile#notes`,
+      href: `/app/profile#notes`,
       label: "Review notes",
     });
   }
@@ -94,7 +94,7 @@ export function nextStep(i: NextStepInput): NextStep {
   if (days !== null && days >= 0 && days <= 2 && i.requiredStillToPack > 0) {
     return step("pack", "Pack your folder", `${i.requiredStillToPack} required document${i.requiredStillToPack === 1 ? "" : "s"} still to pack. Originals, in order, the night before.`, {
       kind: "link",
-      href: `/app/cases/${i.caseId}#bring`,
+      href: `/app#bring`,
       label: "Open the list",
     });
   }

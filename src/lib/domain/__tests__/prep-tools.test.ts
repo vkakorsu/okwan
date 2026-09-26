@@ -51,3 +51,16 @@ describe("mic and connection check", () => {
     expect(d.high).toBeGreaterThan(d.low);
   });
 });
+
+describe("passport expiry", () => {
+  it("warns when the passport expires within six months, and shows it on the fact sheet", async () => {
+    const { scanCase } = await import("../case-scan");
+    const now = Date.parse("2026-09-26T00:00:00Z");
+    const soon = CaseProfile.parse({ ...amaF1, applicant: { ...amaF1.applicant, passportExpiry: "2027-01-10" } });
+    const fine = CaseProfile.parse({ ...amaF1, applicant: { ...amaF1.applicant, passportExpiry: "2031-01-10" } });
+    expect(scanCase(soon, now).map((f) => f.id)).toContain("passport_expiry");
+    expect(scanCase(fine, now).map((f) => f.id)).not.toContain("passport_expiry");
+    expect(scanCase(amaF1, now).map((f) => f.id)).not.toContain("passport_expiry");
+    expect(factSheet(soon).find((s) => s.title === "You")?.facts.find((f) => f.label === "Passport expires")?.value).toBe("2027-01-10");
+  });
+});

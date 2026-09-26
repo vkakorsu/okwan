@@ -1,23 +1,18 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { deleteDocument, retryExtraction } from "@/app/app/actions";
 import { AutoRefresh } from "@/components/app/auto-refresh";
 import { DocumentUploader } from "@/components/app/document-uploader";
 import { BackLink, Button, Card, Notice, PageTitle } from "@/components/app/ui";
 import { env, features } from "@/lib/env";
-import { requireUser } from "@/lib/server/auth";
-import { getCase } from "@/lib/server/repo";
+import { requireCase } from "@/lib/server/case-access";
 import { capitalize, formatDate } from "@/lib/labels";
 import { documentLabel } from "@/lib/domain/notes";
 
 const STATUS: Record<string, string> = { pending: "Reading…", done: "Read", failed: "Couldn't read" };
 
-export default async function Documents(props: PageProps<"/app/cases/[id]/documents">) {
-  const { id } = await props.params;
+export default async function Documents(props: PageProps<"/app/documents">) {
   const { notice } = await props.searchParams;
-  const { user, supabase } = await requireUser(`/app/cases/${id}/documents`);
-  const caseRow = await getCase(supabase, id);
-  if (!caseRow) notFound();
+  const { user, supabase, id, caseRow } = await requireCase("/app/documents");
   const { data: docs } = await supabase
     .from("documents")
     .select("id, kind, extraction, extraction_status, extraction_error, created_at, delete_after")
@@ -27,7 +22,7 @@ export default async function Documents(props: PageProps<"/app/cases/[id]/docume
   return (
     <>
       {(docs ?? []).some((d) => d.extraction_status === "pending") && <AutoRefresh />}
-      <BackLink href={`/app/cases/${id}`}>{caseRow.applicant_name}</BackLink>
+      <BackLink href={`/app`}>{caseRow.applicant_name}</BackLink>
       <Notice code={notice} />
       <PageTitle eyebrow="Documents" title="What the officer will see">
         Upload what you&rsquo;ll bring to the interview. We read the facts, then you confirm them. Only confirmed facts are
@@ -57,7 +52,15 @@ export default async function Documents(props: PageProps<"/app/cases/[id]/docume
                       {d.extraction_error ? `: ${d.extraction_error}` : ""} · deleted {formatDate(d.delete_after)}
                     </span>
                     {(() => {
-                      const x = d.extraction as { legibility?: string; unreadable?: string; transcript?: string } | null;
+                      const x = d.extraction as { legibility?: string; unreadable?: string; transcript?: string; ds160Part?: string } | null;
+                      if (d.kind === "ds160" && x?.ds160Part === "confirmation_page") {
+                        return (
+                          <span className="mt-1 block text-xs text-refused">
+                            This is only the confirmation page. It shows almost nothing about your case. Upload the full printout of your
+                            DS-160 answers (every page), then delete this one. Keep the confirmation page for the embassy.
+                          </span>
+                        );
+                      }
                       if (d.extraction_status === "done" && x?.transcript === "failed" && (!x.legibility || x.legibility === "clear")) {
                         return (
                           <span className="mt-1 block text-xs text-accent">
@@ -88,7 +91,7 @@ export default async function Documents(props: PageProps<"/app/cases/[id]/docume
               ))}
             </ul>
           )}
-          <Link href={`/app/cases/${id}/profile`} className="mt-6 inline-block rounded-[3px] bg-ink px-5 py-2.5 text-sm font-semibold text-on-ink hover:bg-stamp">
+          <Link href={`/app/profile`} className="mt-6 inline-block rounded-[3px] bg-ink px-5 py-2.5 text-sm font-semibold text-on-ink hover:bg-stamp">
             Review and confirm facts →
           </Link>
         </Card>

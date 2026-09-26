@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { startDrill, startSession } from "@/app/app/actions";
 import { ReapplyCheck } from "@/components/app/reapply-check";
 import { BackLink, Button, Card, PageTitle } from "@/components/app/ui";
-import { requireUser } from "@/lib/server/auth";
-import { getCase, latestProfile } from "@/lib/server/repo";
+import { requireCase } from "@/lib/server/case-access";
+import { latestProfile } from "@/lib/server/repo";
 
 export const metadata = { title: "Refused before" };
 
@@ -13,11 +12,8 @@ export const metadata = { title: "Refused before" };
  * reapply now or wait, and practice on "What has changed?". Honest by design:
  * sometimes the answer is to wait.
  */
-export default async function RefusedPage(props: PageProps<"/app/cases/[id]/refused">) {
-  const { id } = await props.params;
-  const { supabase } = await requireUser(`/app/cases/${id}/refused`);
-  const caseRow = await getCase(supabase, id);
-  if (!caseRow) notFound();
+export default async function RefusedPage() {
+  const { supabase, id, caseRow } = await requireCase("/app/refused");
   const [current, { data: outcome }] = await Promise.all([
     latestProfile(supabase, id),
     supabase.from("outcomes").select("result").eq("case_id", id).maybeSingle(),
@@ -29,7 +25,7 @@ export default async function RefusedPage(props: PageProps<"/app/cases/[id]/refu
 
   return (
     <>
-      <BackLink href={`/app/cases/${id}`}>{caseRow.applicant_name}</BackLink>
+      <BackLink href={`/app`}>{caseRow.applicant_name}</BackLink>
       <PageTitle eyebrow="Refused before" title="What a refusal means, and what to do next">
         {onFile
           ? `Your file shows ${refusals.length === 1 ? `a refusal in ${last}` : `${refusals.length} refusals, most recently ${last}`}. The officer can see ${refusals.length === 1 ? "it" : "them"}, and the notes from the last interview.`
@@ -90,7 +86,7 @@ export default async function RefusedPage(props: PageProps<"/app/cases/[id]/refu
                   <Button>Drill it ▸</Button>
                 </form>
               ) : (
-                <Link href={`/app/cases/${id}/profile`} className="rounded-[3px] bg-ink px-4 py-2 text-sm font-semibold text-on-ink hover:bg-stamp">
+                <Link href={`/app/profile`} className="rounded-[3px] bg-ink px-4 py-2 text-sm font-semibold text-on-ink hover:bg-stamp">
                   Add the refusal to your facts
                 </Link>
               )}

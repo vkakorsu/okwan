@@ -51,7 +51,7 @@ export async function createCase(formData: FormData) {
   const input = NewCase.parse(Object.fromEntries(formData));
   const { count } = await supabase.from("cases").select("id", { count: "exact", head: true });
   if ((count ?? 0) >= MAX_CASES_PER_ACCOUNT) redirect("/app");
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("cases")
     .insert({
       user_id: user.id,
@@ -65,7 +65,7 @@ export async function createCase(formData: FormData) {
   // A double submit hits the one-per-account index: the first one won.
   if (error?.code === "23505") redirect("/app");
   if (error) throw error;
-  redirect(`/app/cases/${data.id}`);
+  redirect(`/app`);
 }
 
 function scanDraft(raw: string | undefined, visaType: "F1" | "B1B2"): Record<string, unknown> {
@@ -91,8 +91,8 @@ export async function setPacked(caseId: string, itemId: string, isPacked: boolea
   if (isPacked) current.add(id);
   else current.delete(id);
   await createServiceClient().from("cases").update({ checklist_packed: [...current] }).eq("id", caseId);
-  revalidatePath(`/app/cases/${caseId}`);
-  revalidatePath(`/app/cases/${caseId}/social`);
+  revalidatePath(`/app`);
+  revalidatePath(`/app/social`);
 }
 
 export async function setInterviewDate(caseId: string, formData: FormData) {
@@ -102,9 +102,9 @@ export async function setInterviewDate(caseId: string, formData: FormData) {
   if (!caseRow) throw new Error("Case not found");
   // Only for the countdown and reminders: it never controls what anyone can use.
   const newDate = new Date(`${date}T09:00:00Z`);
-  if (newDate.getTime() < Date.now() - 24 * 60 * 60 * 1000) redirect(`/app/cases/${caseId}?notice=date-in-past`);
+  if (newDate.getTime() < Date.now() - 24 * 60 * 60 * 1000) redirect(`/app?notice=date-in-past`);
   await supabase.from("cases").update({ interview_at: newDate.toISOString() }).eq("id", caseId);
-  redirect(`/app/cases/${caseId}`);
+  redirect(`/app`);
 }
 
 /* ------------------------------------------------------------- documents */
@@ -112,7 +112,7 @@ export async function setInterviewDate(caseId: string, formData: FormData) {
 const DocKind = z.enum([
   "ds160", "i20", "ds2019", "admission_letter", "scholarship_letter", "academic_record", "bank_statement", "sponsor_letter", "employment_letter",
   "business_registration", "property", "invitation_letter", "refusal_letter", "appointment_confirmation",
-  "passport_travel_page", "other",
+  "passport_bio", "passport_travel_page", "other",
 ]);
 
 /**
@@ -160,11 +160,11 @@ export async function retryExtraction(documentId: string) {
   const { data } = await supabase.from("documents").select("case_id, extraction_status").eq("id", documentId).maybeSingle();
   if (!data) return;
   if (data.extraction_status !== "pending" && features.gemini && features.supabaseAdmin) {
-    if (await claimDocumentRead(data.case_id)) redirect(`/app/cases/${data.case_id}/documents?notice=reads-limit`);
+    if (await claimDocumentRead(data.case_id)) redirect(`/app/documents?notice=reads-limit`);
     await createServiceClient().from("documents").update({ extraction_status: "pending", extraction_error: null }).eq("id", documentId);
     after(() => runExtraction(documentId));
   }
-  redirect(`/app/cases/${data.case_id}/documents`);
+  redirect(`/app/documents`);
 }
 
 export async function deleteDocument(documentId: string) {
@@ -175,7 +175,7 @@ export async function deleteDocument(documentId: string) {
   // Confirmed notes are the user's facts and stay; undecided ones go with the document.
   await createServiceClient().from("case_notes").delete().eq("document_id", documentId).neq("status", "confirmed");
   await supabase.from("documents").delete().eq("id", documentId);
-  redirect(`/app/cases/${data.case_id}/documents`);
+  redirect(`/app/documents`);
 }
 
 /* --------------------------------------------------------------- profile */
@@ -223,7 +223,7 @@ export async function confirmProfile(caseId: string, _prev: ConfirmState, f: For
   await createServiceClient().from("cases").update({ draft_profile: draft }).eq("id", caseId);
   // Questions only this applicant would get, written from the new facts.
   if (features.gemini && features.supabaseAdmin) after(() => runCaseQuestions(caseId));
-  redirect(`/app/cases/${caseId}?notice=profile-confirmed`);
+  redirect(`/app?notice=profile-confirmed`);
 }
 
 /* -------------------------------------------------------------- sessions */
@@ -256,10 +256,10 @@ export async function startSession(caseId: string, requestedMode: SessionMode) {
   const caseRow = await getCase(supabase, caseId);
   if (!caseRow) throw new Error("Case not found");
   const current = await latestProfile(supabase, caseId);
-  if (!current) redirect(`/app/cases/${caseId}/profile`);
+  if (!current) redirect(`/app/profile`);
 
   const ent = await caseEntitlement(supabase, caseRow);
-  if (ent.kind === "none") redirect(`/app/cases/${caseId}/pass?reason=${encodeURIComponent(ent.reason)}`);
+  if (ent.kind === "none") redirect(`/app/pass?reason=${encodeURIComponent(ent.reason)}`);
 
   const history = await pastSessions(supabase, caseId);
   const topics = readinessTopics(current.profile);
@@ -311,10 +311,10 @@ export async function startDrill(caseId: string, probeId: string) {
   const caseRow = await getCase(supabase, caseId);
   if (!caseRow) throw new Error("Case not found");
   const current = await latestProfile(supabase, caseId);
-  if (!current) redirect(`/app/cases/${caseId}/profile`);
+  if (!current) redirect(`/app/profile`);
 
   const ent = await caseDrillEntitlement(supabase, caseRow);
-  if (ent.kind === "none") redirect(`/app/cases/${caseId}/pass?reason=${encodeURIComponent(ent.reason)}`);
+  if (ent.kind === "none") redirect(`/app/pass?reason=${encodeURIComponent(ent.reason)}`);
 
   const [history, context] = await Promise.all([pastSessions(supabase, caseId), planContext(supabase, caseRow, current.profile)]);
   const topics = readinessTopics(current.profile);
@@ -330,7 +330,7 @@ export async function startDrill(caseId: string, probeId: string) {
     },
     z.string().max(80).parse(probeId),
   );
-  if (!plan) redirect(`/app/cases/${caseId}?notice=drill-unavailable`);
+  if (!plan) redirect(`/app?notice=drill-unavailable`);
 
   const { data, error } = await createServiceClient()
     .from("sessions")
@@ -386,7 +386,7 @@ export async function reportOutcome(caseId: string, formData: FormData) {
     reported_questions: list(formData.get("questions")),
     consent_to_aggregate: formData.get("consent") === "on",
   });
-  redirect(`/app/cases/${caseId}?notice=outcome-thanks`);
+  redirect(`/app?notice=outcome-thanks`);
 }
 
 /* ------------------------------------------------------ transcript fixes */
@@ -447,7 +447,7 @@ export async function setNoteStatus(noteId: string, status: "confirmed" | "remov
     .from("case_notes")
     .update({ status, decided_at: status === "pending" ? null : new Date().toISOString() })
     .eq("id", noteId);
-  redirect(`/app/cases/${data.case_id}/profile#notes`);
+  redirect(`/app/profile#notes`);
 }
 
 export async function keepAllNotes(caseId: string) {
@@ -461,7 +461,7 @@ export async function keepAllNotes(caseId: string) {
     .eq("status", "pending");
   // Kept notes from the DS-160 or I-20 are on the officer's screen: they can prompt new questions.
   if (features.gemini && features.supabaseAdmin) after(() => runCaseQuestions(caseId));
-  redirect(`/app/cases/${caseId}/profile#notes`);
+  redirect(`/app/profile#notes`);
 }
 
 /* --------------------------------------------------------- debrief shares */

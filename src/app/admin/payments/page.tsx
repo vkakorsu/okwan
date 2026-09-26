@@ -51,6 +51,10 @@ export default async function AdminPayments() {
               p.refunded_at ? "Refunded" : "Active",
             ];
           })}
+          sortValues={passes.map((p) => {
+            const c = p.cases as unknown as { applicant_name: string } | null;
+            return [p.purchased_at, c?.applicant_name ?? null, packLabel(p.plan), p.amount_pesewas ?? 0, null, p.interviews, p.refunded_at ? "Refunded" : "Active"];
+          })}
           empty="No packs yet."
         />
       </Section>

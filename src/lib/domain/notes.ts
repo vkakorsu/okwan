@@ -30,7 +30,7 @@ export interface CaseNote {
  * passport and any prior refusal. Everything else stays in the applicant's
  * folder until the officer asks for it.
  */
-const ON_SCREEN_KINDS = new Set(["ds160", "i20", "ds2019", "passport_travel_page", "refusal_letter", "appointment_confirmation"]);
+const ON_SCREEN_KINDS = new Set(["ds160", "i20", "ds2019", "passport_bio", "passport_travel_page", "refusal_letter", "appointment_confirmation"]);
 export const isOnScreen = (sourceKind: string) => ON_SCREEN_KINDS.has(sourceKind);
 
 export const DOCUMENT_LABEL: Record<string, string> = {
@@ -48,7 +48,8 @@ export const DOCUMENT_LABEL: Record<string, string> = {
   invitation_letter: "invitation letter",
   refusal_letter: "refusal letter",
   appointment_confirmation: "appointment confirmation",
-  passport_travel_page: "passport",
+  passport_bio: "passport",
+  passport_travel_page: "passport stamps",
   other: "other document",
 };
 export const documentLabel = (kind: string) => DOCUMENT_LABEL[kind] ?? kind.replaceAll("_", " ");

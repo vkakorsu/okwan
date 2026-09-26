@@ -30,7 +30,7 @@ export function whatToBring(c: CaseProfile): ChecklistItem[] {
       label: "Passport, valid at least six months beyond your stay",
       why: "Handed over first. Bring old passports with US or other visas too.",
       group: "Required",
-      docKind: "passport_travel_page",
+      docKind: "passport_bio",
     },
     { id: "ds160", label: "DS-160 confirmation page (with barcode)", why: "Checked at the entrance and at the window.", group: "Required", docKind: "ds160" },
     {

@@ -36,6 +36,7 @@ export default async function AdminAudit() {
             <span key="t" className="font-mono text-xs">{r.target_id ? String(r.target_id).slice(0, 8) : "—"}</span>,
             r.reason,
           ])}
+          sortValues={(data ?? []).map((r) => [r.created_at, String(r.admin_id), AUDIT_ACTIONS[r.action] ?? r.action, r.target_id ? String(r.target_id) : null, r.reason])}
           empty="No admin actions yet."
         />
       </div>

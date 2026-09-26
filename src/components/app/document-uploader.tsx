@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/browser";
 import { Button, Field, inputCls } from "./ui";
 
 const KINDS: { value: string; label: string; visa?: "F1" | "B1B2" }[] = [
-  { value: "ds160", label: "DS-160 confirmation or answers" },
+  { value: "ds160", label: "DS-160 answers (the full printout, not just the confirmation page)" },
   { value: "i20", label: "I-20", visa: "F1" },
   { value: "admission_letter", label: "Admission letter", visa: "F1" },
   { value: "scholarship_letter", label: "Scholarship or financial aid letter", visa: "F1" },
@@ -21,7 +21,8 @@ const KINDS: { value: string; label: string; visa?: "F1" | "B1B2" }[] = [
   { value: "invitation_letter", label: "Invitation letter", visa: "B1B2" },
   { value: "refusal_letter", label: "Previous refusal letter" },
   { value: "appointment_confirmation", label: "Appointment confirmation" },
-  { value: "passport_travel_page", label: "Passport travel history page" },
+  { value: "passport_bio", label: "Passport bio page (the one with your photo)" },
+  { value: "passport_travel_page", label: "Passport pages with visas and stamps" },
   { value: "other", label: "Other" },
 ];
 

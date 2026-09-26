@@ -51,7 +51,7 @@ function event(e: { uid: string; start: number; minutes: number; title: string; 
 export function practiceCalendar(i: CalendarInput): string {
   const now = i.now ?? Date.now();
   const interview = Date.parse(i.interviewAt);
-  const caseUrl = `${i.siteUrl}/app/cases/${i.caseId}`;
+  const caseUrl = `${i.siteUrl}/app`;
   const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Okwan//Interview practice//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", `X-WR-CALNAME:${text("Okwan: visa interview")}`];
 
   const today = Math.floor(now / DAY) * DAY;

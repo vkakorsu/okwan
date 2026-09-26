@@ -25,7 +25,7 @@ export default async function AdminUsers(props: PageProps<"/admin/users">) {
     <>
       <PageHead title="Users">Search by email or user ID. Case facts and recordings are hidden; opening them is audit-logged.</PageHead>
       <form className="mt-6 flex max-w-lg gap-2">
-        <input name="q" defaultValue={query} placeholder="email, 024 000 0000 or user id" className={inputCls} />
+        <input name="q" defaultValue={query} placeholder="email or user ID" className={inputCls} />
         <button className="rounded-[3px] bg-ink px-5 text-sm font-semibold text-on-ink hover:bg-stamp">Search</button>
       </form>
       {error && <p role="alert" className="mt-6 text-sm text-refused">Couldn&rsquo;t load users: {error.message}</p>}
@@ -41,6 +41,7 @@ export default async function AdminUsers(props: PageProps<"/admin/users">) {
               Open
             </Link>,
           ])}
+          sortValues={(users ?? []).map((u) => [u.email ?? null, u.role, caseCount.get(u.id) ?? 0, u.created_at, null])}
           empty={query ? "No match." : "No users yet."}
         />
       </div>

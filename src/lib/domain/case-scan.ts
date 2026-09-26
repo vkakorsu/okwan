@@ -16,8 +16,20 @@ export interface CaseFlag {
   probes: string[];
 }
 
-export function scanCase(c: CaseProfile): CaseFlag[] {
+export function scanCase(c: CaseProfile, now = Date.now()): CaseFlag[] {
   const flags: CaseFlag[] = [];
+
+  // Passports generally need to be valid for six months beyond the stay.
+  const expiry = c.applicant.passportExpiry ? Date.parse(`${c.applicant.passportExpiry}T00:00:00Z`) : NaN;
+  if (Number.isFinite(expiry) && expiry < now + 183 * 24 * 60 * 60 * 1000) {
+    flags.push({
+      id: "passport_expiry",
+      severity: "high",
+      title: expiry < now ? "Your passport has expired" : "Your passport expires within six months",
+      detail: `It ${expiry < now ? "expired" : "expires"} on ${c.applicant.passportExpiry}. A US visa generally needs a passport valid for at least six months beyond your stay. Renew it before the interview if you can.`,
+      probes: [],
+    });
+  }
   const sponsor = c.funding.sponsors[0];
 
   const gap = fundingGapUsd(c);

@@ -1,17 +1,13 @@
-import { notFound } from "next/navigation";
 import { keepAllNotes, setNoteStatus } from "@/app/app/actions";
 import { ProfileForm } from "@/components/app/profile-form";
 import { BackLink, Button, Card, PageTitle } from "@/components/app/ui";
 import { documentLabel, isOnScreen } from "@/lib/domain/notes";
 import type { DraftConflict } from "@/lib/domain/draft";
-import { requireUser } from "@/lib/server/auth";
-import { getCase, latestProfile } from "@/lib/server/repo";
+import { requireCase } from "@/lib/server/case-access";
+import { latestProfile } from "@/lib/server/repo";
 
-export default async function ProfilePage(props: PageProps<"/app/cases/[id]/profile">) {
-  const { id } = await props.params;
-  const { supabase } = await requireUser(`/app/cases/${id}/profile`);
-  const caseRow = await getCase(supabase, id);
-  if (!caseRow) notFound();
+export default async function ProfilePage() {
+  const { supabase, id, caseRow } = await requireCase("/app/profile");
   const current = await latestProfile(supabase, id);
   const { _conflicts, _fx, ...draft } = caseRow.draft_profile as {
     _conflicts?: DraftConflict[];
@@ -30,7 +26,7 @@ export default async function ProfilePage(props: PageProps<"/app/cases/[id]/prof
 
   return (
     <>
-      <BackLink href={`/app/cases/${id}`}>{caseRow.applicant_name}</BackLink>
+      <BackLink href={`/app`}>{caseRow.applicant_name}</BackLink>
       <PageTitle eyebrow="Your facts" title="Confirm what's true">
         {current
           ? "These are your confirmed facts. Changing them creates a new version; your next officer uses the latest."

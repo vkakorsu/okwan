@@ -244,7 +244,9 @@ export async function accountCaseId(db: SupabaseClient, userId: string): Promise
 /** What the account can still use, for the top bar: the same balance the Practice card shows. */
 export async function accountCredits(db: SupabaseClient, userId: string) {
   const caseId = await accountCaseId(db, userId);
-  if (!caseId) return { plan: null, interviews: 0, drills: 0, buyHref: "/app" };
+  // Always /app/pass: the top bar lives in the layout, which isn't re-rendered when the case is
+  // first set up, so a link built from "no case yet" must still be right afterwards.
+  if (!caseId) return { plan: null, interviews: 0, drills: 0, buyHref: "/app/pass" };
   const [balance, { data: passes }] = await Promise.all([
     caseCredits(db, caseId),
     db.from("passes").select("plan").eq("case_id", caseId).is("refunded_at", null).order("purchased_at", { ascending: false }).limit(1),
@@ -253,6 +255,6 @@ export async function accountCredits(db: SupabaseClient, userId: string) {
     plan: (passes?.[0]?.plan as string | undefined) ?? null,
     interviews: balance.interviews,
     drills: balance.drills,
-    buyHref: `/app/cases/${caseId}/pass`,
+    buyHref: `/app/pass`,
   };
 }

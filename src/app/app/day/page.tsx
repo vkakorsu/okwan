@@ -1,11 +1,9 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { PrintButton } from "@/components/app/print-button";
 import { BackLink, Card, PageTitle } from "@/components/app/ui";
 import { countdownLabel, daysUntil } from "@/lib/countdown";
 import { formatDate } from "@/lib/labels";
-import { requireUser } from "@/lib/server/auth";
-import { getCase } from "@/lib/server/repo";
+import { requireCase } from "@/lib/server/case-access";
 
 export const metadata = { title: "Interview day" };
 
@@ -28,18 +26,15 @@ function Step({ when, title, children }: { when: string; title: string; children
   );
 }
 
-export default async function DayPage(props: PageProps<"/app/cases/[id]/day">) {
-  const { id } = await props.params;
-  const { supabase } = await requireUser(`/app/cases/${id}/day`);
-  const caseRow = await getCase(supabase, id);
-  if (!caseRow) notFound();
+export default async function DayPage() {
+  const { caseRow } = await requireCase("/app/day");
   const student = caseRow.visa_type === "F1";
   const days = caseRow.interview_at ? daysUntil(caseRow.interview_at) : null;
 
   return (
     <>
       <div className="print:hidden">
-        <BackLink href={`/app/cases/${id}`}>{caseRow.applicant_name}</BackLink>
+        <BackLink href={`/app`}>{caseRow.applicant_name}</BackLink>
       </div>
       <PageTitle eyebrow="Interview day" title="The day at the embassy">
         {caseRow.interview_at
@@ -60,12 +55,12 @@ export default async function DayPage(props: PageProps<"/app/cases/[id]/day">) {
           <ol className="divide-y divide-line">
             <Step when="The night before" title="Pack one folder, then stop practising">
               <p>
-                Go through <Link className="underline" href={`/app/cases/${id}#bring`}>What to bring</Link>: passport, DS-160 confirmation page,
+                Go through <Link className="underline" href={`/app#bring`}>What to bring</Link>: passport, DS-160 confirmation page,
                 appointment letter{student ? ", signed I-20 and SEVIS fee receipt" : ""}, and your supporting documents in the order you&rsquo;d
                 reach for them.
               </p>
               <p>
-                Read <Link className="underline" href={`/app/cases/${id}/facts`}>Know your file</Link> once. No new answers now: you know your case.
+                Read <Link className="underline" href={`/app/facts`}>Know your file</Link> once. No new answers now: you know your case.
               </p>
               <p>Plan your route and leave time for Accra traffic. Sleep.</p>
             </Step>
@@ -100,7 +95,7 @@ export default async function DayPage(props: PageProps<"/app/cases/[id]/day">) {
               </p>
               <p>
                 <span className="font-semibold">Refused under 214(b):</span> a letter explaining the section. It isn&rsquo;t a ban.{" "}
-                <Link className="underline" href={`/app/cases/${id}/refused`}>What to do next</Link>.
+                <Link className="underline" href={`/app/refused`}>What to do next</Link>.
               </p>
             </Step>
           </ol>
@@ -120,7 +115,7 @@ export default async function DayPage(props: PageProps<"/app/cases/[id]/day">) {
           <Card>
             <h2 className="font-display text-2xl uppercase">Afterwards</h2>
             <p className="mt-1 text-sm text-muted">Whatever happens, tell us how it went. It makes the practice more real for the next applicant.</p>
-            <Link href={`/app/cases/${id}#outcome`} className="mt-3 inline-block text-sm underline">
+            <Link href={`/app#outcome`} className="mt-3 inline-block text-sm underline">
               Report your outcome
             </Link>
           </Card>

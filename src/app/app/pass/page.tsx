@@ -1,26 +1,22 @@
-import { notFound } from "next/navigation";
 import { buyPlan } from "@/app/app/actions";
 import { BackLink, Button, Card, PageTitle } from "@/components/app/ui";
 import type { PackId } from "@/lib/domain/credits";
 import { features } from "@/lib/env";
 import { formatGhs, plans, PURCHASABLE } from "@/lib/pricing";
-import { requireUser } from "@/lib/server/auth";
-import { caseCredits, getCase } from "@/lib/server/repo";
+import { requireCase } from "@/lib/server/case-access";
+import { caseCredits } from "@/lib/server/repo";
 
 export const metadata = { title: "Get interviews" };
 
-export default async function PassPage(props: PageProps<"/app/cases/[id]/pass">) {
-  const { id } = await props.params;
+export default async function PassPage(props: PageProps<"/app/pass">) {
   const { reason } = await props.searchParams;
-  const { supabase } = await requireUser(`/app/cases/${id}/pass`);
-  const caseRow = await getCase(supabase, id);
-  if (!caseRow) notFound();
+  const { supabase, id, caseRow } = await requireCase("/app/pass");
   const credits = await caseCredits(supabase, id);
   const packs = plans.filter((p) => PURCHASABLE.includes(p.id as PackId));
 
   return (
     <>
-      <BackLink href={`/app/cases/${id}`}>{caseRow.applicant_name}</BackLink>
+      <BackLink href={`/app`}>{caseRow.applicant_name}</BackLink>
       <PageTitle eyebrow="Interviews and drills" title="Pay for what you use">
         {typeof reason === "string" ? `${reason} ` : ""}
         One payment, no subscription. Every started interview or drill uses one credit; clicking and leaving costs nothing.

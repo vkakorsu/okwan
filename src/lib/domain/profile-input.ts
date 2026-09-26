@@ -85,6 +85,7 @@ export function profileCandidate(
       fullName: str(g("applicant.fullName")),
       dateOfBirth: str(g("applicant.dateOfBirth")),
       nationality: str(g("applicant.nationality")),
+      passportExpiry: str(g("applicant.passportExpiry")),
       age: num(g("applicant.age")),
       maritalStatus: str(g("applicant.maritalStatus")) ?? "single",
       children: num(g("applicant.children")) ?? 0,
