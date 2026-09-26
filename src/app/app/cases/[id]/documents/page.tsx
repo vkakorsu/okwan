@@ -57,7 +57,14 @@ export default async function Documents(props: PageProps<"/app/cases/[id]/docume
                       {d.extraction_error ? `: ${d.extraction_error}` : ""} · deleted {formatDate(d.delete_after)}
                     </span>
                     {(() => {
-                      const x = d.extraction as { legibility?: string; unreadable?: string } | null;
+                      const x = d.extraction as { legibility?: string; unreadable?: string; transcript?: string } | null;
+                      if (d.extraction_status === "done" && x?.transcript === "failed" && (!x.legibility || x.legibility === "clear")) {
+                        return (
+                          <span className="mt-1 block text-xs text-accent">
+                            Facts read, but not the full text, so your coach can&rsquo;t see all of it. Try &ldquo;Read again&rdquo;, or upload fewer pages.
+                          </span>
+                        );
+                      }
                       if (!x?.legibility || x.legibility === "clear") return null;
                       return (
                         <span className="mt-1 block text-xs text-refused">

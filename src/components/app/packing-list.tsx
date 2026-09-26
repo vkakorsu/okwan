@@ -42,7 +42,7 @@ export function PackingList({
     <div className="mt-4 space-y-6">
       <p className="text-sm">
         <strong className="tabular">
-          {optimistic.size} of {items.length}
+          {items.filter((i) => optimistic.has(i.id)).length} of {items.length}
         </strong>{" "}
         in your folder
         {requiredPacked < required.length && (

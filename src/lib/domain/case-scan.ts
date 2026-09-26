@@ -109,7 +109,7 @@ export function scanCase(c: CaseProfile): CaseFlag[] {
       id: "social_media",
       severity: "low",
       title: "Social media must be public",
-      detail: "Student applicants are asked to set social media accounts to public before the interview.",
+      detail: "Student applicants must set social media accounts to public before the interview, and officers check they match the application. Use the Social media check.",
       probes: [],
     });
   }

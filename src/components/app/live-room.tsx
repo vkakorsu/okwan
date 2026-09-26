@@ -24,6 +24,8 @@ interface Turn {
   endedMs: number | null;
   /** From the end of this answer to the officer's next audio. */
   replyLatencyMs: number | null;
+  /** The officer started speaking before the applicant had finished (a cut-in, or talking over them). */
+  interrupted?: boolean;
 }
 
 interface Props {
@@ -70,6 +72,12 @@ const NO_REPLY_MS = 3500;
 const HANDOVER_MS = 8000;
 /** Reconnects allowed after a dropped line (the token route allows 3 tokens per session). */
 const MAX_RECONNECTS = 3;
+/** Mic level that means the applicant is still talking over the officer (well above echo after cancellation). */
+const TALK_OVER_LEVEL = 0.06;
+/** How long after the officer starts that the applicant still talking counts as being cut off. */
+const TALK_OVER_WINDOW_MS = 1500;
+/** Times the officer may be asked to let the applicant finish before ending. */
+const MAX_END_DEFERRALS = 2;
 
 export function LiveRoom(props: Props) {
   const router = useRouter();
@@ -111,6 +119,13 @@ export function LiveRoom(props: Props) {
   const connectionRef = useRef(0);
   const reconnectsRef = useRef(0);
   const reconnectingRef = useRef(false);
+  /** When the officer's current turn started to be heard, to catch the applicant still talking. */
+  const officerStartedAtRef = useRef(0);
+  const endDeferralsRef = useRef(0);
+  /** After the verdict: the decision line, the officer's words since, and where to stop playing. */
+  const decisionLineRef = useRef<string | null>(null);
+  const afterDecisionTextRef = useRef("");
+  const playUntilRef = useRef<number | null>(null);
 
   const now = () => Date.now() - startRef.current;
 
@@ -140,6 +155,8 @@ export function LiveRoom(props: Props) {
   function playPcm(b64: string) {
     const p = playRef.current;
     if (!p) return;
+    // After the decision line, anything more the officer says is dropped.
+    if (playUntilRef.current !== null && p.next >= playUntilRef.current) return;
     const pcm = fromBase64(b64);
     const buffer = p.ctx.createBuffer(1, pcm.length, 24000);
     const ch = buffer.getChannelData(0);
@@ -157,6 +174,7 @@ export function LiveRoom(props: Props) {
       }
       officerTurnRef.current += 1;
       answerSinceRef.current = null;
+      officerStartedAtRef.current = Date.now();
       const silence = behaviourRef.current?.typingSilence;
       if (silence && silence.turn === officerTurnRef.current) {
         // The officer looks down and types before speaking. Say so, or it reads as lag.
@@ -255,6 +273,11 @@ export function LiveRoom(props: Props) {
         // the server. If the officer's turn was only this call, WHEN_IDLE makes it
         // go on to the next question now instead of sitting in silence.
         const officerQuiet = lastVoiceAtRef.current > lastOfficerAtRef.current;
+        if (call.name === "log_probe") {
+          // How long the answer really was, from the mic: the model's own estimate is unreliable.
+          const answered = [...turnsRef.current].reverse().find((t) => t.startedMs !== null && t.endedMs !== null);
+          if (answered) call.args = { ...(call.args ?? {}), answer_seconds: Math.round((answered.endedMs! - answered.startedMs!) / 100) / 10 };
+        }
         sessionRef.current?.sendToolResponse({
           functionResponses: [
             {
@@ -269,6 +292,21 @@ export function LiveRoom(props: Props) {
         continue;
       }
       try {
+        if (call.name === "end_interview" && Date.now() - lastVoiceAtRef.current < 900 && endDeferralsRef.current < MAX_END_DEFERRALS) {
+          // The applicant is still mid-answer: let them finish before the decision.
+          endDeferralsRef.current += 1;
+          sessionRef.current?.sendToolResponse({
+            functionResponses: [
+              {
+                id: call.id,
+                name: call.name,
+                response: { deferred: true, instruction: "The applicant is still speaking. Let them finish, then call end_interview again." },
+                scheduling: FunctionResponseScheduling.WHEN_IDLE,
+              },
+            ],
+          });
+          continue;
+        }
         if (call.name === "scan_fingerprints") {
           for (const hand of ["left four fingers", "right four fingers", "both thumbs"]) {
             await askAction(
@@ -300,7 +338,11 @@ export function LiveRoom(props: Props) {
           }
         }
         const result = await relay(call);
-        if (call.name === "end_interview") decidedRef.current = true;
+        if (call.name === "end_interview") {
+          decidedRef.current = true;
+          const line = result.response?.say_exactly;
+          if (typeof line === "string") decisionLineRef.current = line;
+        }
         sessionRef.current?.sendToolResponse({
           functionResponses: [
             {
@@ -330,7 +372,20 @@ export function LiveRoom(props: Props) {
     for (const part of sc?.modelTurn?.parts ?? []) {
       if (part.inlineData?.data) playPcm(part.inlineData.data);
     }
-    if (sc?.outputTranscription?.text) onOfficerText(sc.outputTranscription.text);
+    if (sc?.outputTranscription?.text) {
+      onOfficerText(sc.outputTranscription.text);
+      if (decisionLineRef.current && playUntilRef.current === null) {
+        // Once the decision line has been said, stop there: officers don't carry on.
+        afterDecisionTextRef.current += sc.outputTranscription.text;
+        const norm = (t: string) => t.toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+        const tail = norm(decisionLineRef.current).split(" ").slice(-3).join(" ");
+        const p = playRef.current;
+        if (tail && norm(afterDecisionTextRef.current).includes(tail) && p) {
+          playUntilRef.current = p.next + 0.3;
+          window.setTimeout(() => void finish(), Math.max(0, (p.next - p.ctx.currentTime) * 1000) + 1500);
+        }
+      }
+    }
     if (sc?.inputTranscription?.text) onUserText(sc.inputTranscription.text);
     if (sc?.turnComplete && decidedRef.current) {
       // Let the decision line finish playing, then leave the window.
@@ -480,6 +535,12 @@ export function LiveRoom(props: Props) {
         if (startRef.current && pcmRef.current.length < MAX_RECORDING_CHUNKS) pcmRef.current.push(new Int16Array(e.data.pcm));
         const p = playRef.current;
         const officerAudible = p ? p.next > p.ctx.currentTime : false;
+        // Still talking loudly just after the officer started: the officer cut them off.
+        if (officerAudible && e.data.level > TALK_OVER_LEVEL && Date.now() - officerStartedAtRef.current < TALK_OVER_WINDOW_MS) {
+          // The answer is the latest turn the applicant spoke in (the officer's new turn has no voice yet).
+          const answered = [...turnsRef.current].reverse().find((t) => t.startedMs !== null);
+          if (answered) answered.interrupted = true;
+        }
         // Ignore echo of the officer's own voice.
         if (e.data.level > VOICE_LEVEL && !officerAudible) {
           const t = Date.now();
@@ -497,7 +558,8 @@ export function LiveRoom(props: Props) {
             turn.endedMs = t - startRef.current;
           }
         }
-        sessionRef.current?.sendRealtimeInput({ audio: { data: toBase64(e.data.pcm), mimeType: "audio/pcm;rate=16000" } });
+        // After the verdict the officer isn't listening any more (and mustn't start a new turn).
+        if (!decidedRef.current) sessionRef.current?.sendRealtimeInput({ audio: { data: toBase64(e.data.pcm), mimeType: "audio/pcm;rate=16000" } });
       };
 
       const levels = new Uint8Array(analyser.frequencyBinCount);
@@ -522,6 +584,8 @@ export function LiveRoom(props: Props) {
         const since = answerSinceRef.current;
         if (cutIn && since && !cutInSentRef.current && !decidedRef.current && Date.now() - since > cutIn * 1000) {
           cutInSentRef.current = true;
+          const answering = [...turnsRef.current].reverse().find((t) => t.startedMs !== null);
+          if (answering) answering.interrupted = true;
           referee(`Cut in. The applicant has been answering for ${cutIn} seconds.`);
         }
       }, 100);

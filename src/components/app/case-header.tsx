@@ -71,7 +71,12 @@ export function CaseHeader({
                 ? readiness.caps[0].reason
                 : `${readiness.confirmed} of ${readiness.total} topics solid · ${readiness.answeredWell} answered well`}
           </p>
-          <p className="mt-1 text-[11px] text-muted">How prepared you are, not a chance of approval.</p>
+          <p className="mt-1 text-[11px] text-muted">
+            How prepared you are, not a chance of approval.{" "}
+            <Link href={`/app/cases/${caseId}/progress`} className="underline underline-offset-2">
+              See progress
+            </Link>
+          </p>
         </div>
         <div id="countdown" className="p-6 sm:p-8">
           <Countdown interviewAt={interviewAt} days={days} setDate={setDate} />

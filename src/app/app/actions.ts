@@ -1,6 +1,6 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -92,6 +92,7 @@ export async function setPacked(caseId: string, itemId: string, isPacked: boolea
   else current.delete(id);
   await createServiceClient().from("cases").update({ checklist_packed: [...current] }).eq("id", caseId);
   revalidatePath(`/app/cases/${caseId}`);
+  revalidatePath(`/app/cases/${caseId}/social`);
 }
 
 export async function setInterviewDate(caseId: string, formData: FormData) {
@@ -461,4 +462,46 @@ export async function keepAllNotes(caseId: string) {
   // Kept notes from the DS-160 or I-20 are on the officer's screen: they can prompt new questions.
   if (features.gemini && features.supabaseAdmin) after(() => runCaseQuestions(caseId));
   redirect(`/app/cases/${caseId}/profile#notes`);
+}
+
+/* --------------------------------------------------------- debrief shares */
+
+/** Active links per session: enough for a parent, a sponsor and a counsellor. */
+const MAX_SHARES_PER_SESSION = 5;
+
+export type ShareState = { url?: string; error?: string };
+
+/** A read-only link to one debrief (src/app/share/[token]). 30 days, revocable. */
+export async function createShare(sessionId: string, _prev: ShareState): Promise<ShareState> {
+  void _prev;
+  const { user, supabase } = await requireUser();
+  // RLS: only the owner can see the session.
+  const { data: session } = await supabase.from("sessions").select("id, case_id, debrief_status").eq("id", sessionId).maybeSingle();
+  if (!session) return { error: "Session not found." };
+  if (session.debrief_status !== "done") return { error: "Wait for the debrief to finish, then share it." };
+  const admin = createServiceClient();
+  const { count } = await admin
+    .from("debrief_shares")
+    .select("token", { count: "exact", head: true })
+    .eq("session_id", sessionId)
+    .is("revoked_at", null)
+    .gt("expires_at", new Date().toISOString());
+  if ((count ?? 0) >= MAX_SHARES_PER_SESSION) return { error: "You already have 5 active links for this debrief. Stop sharing one first." };
+  const token = randomBytes(24).toString("base64url");
+  const { error } = await admin.from("debrief_shares").insert({ token, session_id: sessionId, created_by: user.id });
+  if (error) return { error: "Couldn't create the link. Try again." };
+  revalidatePath(`/app/sessions/${sessionId}/debrief`);
+  return { url: `${env.siteUrl}/share/${token}` };
+}
+
+export async function revokeShare(token: string) {
+  const { supabase } = await requireUser();
+  // RLS: owners can only set revoked_at on their own links.
+  const { data } = await supabase
+    .from("debrief_shares")
+    .update({ revoked_at: new Date().toISOString() })
+    .eq("token", z.string().regex(/^[A-Za-z0-9_-]{32}$/).parse(token))
+    .select("session_id")
+    .maybeSingle();
+  if (data) revalidatePath(`/app/sessions/${data.session_id}/debrief`);
 }

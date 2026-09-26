@@ -15,6 +15,7 @@ const Body = z.object({
         startedMs: z.number().int().min(0).nullable(),
         endedMs: z.number().int().min(0).nullable(),
         replyLatencyMs: z.number().int().min(0).max(600_000).nullable().optional(),
+        interrupted: z.boolean().optional(),
       }),
     )
     .max(60),
@@ -43,6 +44,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/sessions/[id]/c
           started_ms: t.startedMs,
           ended_ms: t.endedMs,
           reply_latency_ms: t.replyLatencyMs ?? null,
+          interrupted: Boolean(t.interrupted),
         })),
       );
     }

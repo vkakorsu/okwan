@@ -89,3 +89,13 @@ describe("topics seen in real interviews", () => {
     expect(all.filter((p) => p.probes.some((x) => x.probeId === "common.residence")).length).toBeGreaterThan(10);
   });
 });
+
+describe("fixes from a real session", () => {
+  it("tells the officer a fragment isn't an answer, and doesn't ask the model for answer length", async () => {
+    const { officerTools } = await import("../officer-prompt");
+    const text = buildOfficerInstruction(plans(1)[0], amaF1);
+    expect(text).toContain('Say "Go on."');
+    const logProbe = officerTools.find((t) => t.name === "log_probe")!;
+    expect(Object.keys(logProbe.parametersJsonSchema.properties)).not.toContain("answer_seconds");
+  });
+});

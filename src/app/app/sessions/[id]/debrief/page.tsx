@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { correctTranscript, rateSession, retryDebrief, startDrill, startSession } from "@/app/app/actions";
 import { AnswerAudioProvider, PlayAnswer } from "@/components/app/answer-audio";
 import { AutoRefresh } from "@/components/app/auto-refresh";
+import { HearAnswer } from "@/components/app/hear-answer";
+import { ShareDebrief } from "@/components/app/share-debrief";
+import { env } from "@/lib/env";
 import { BackLink, Button, Card, PageTitle } from "@/components/app/ui";
 import { deliveryNotes, type DeliveryMetrics, type VoiceSummary } from "@/lib/domain/delivery";
 import { NOTE_PROBE_PREFIX, type SessionPlan } from "@/lib/domain/director";
@@ -71,6 +74,14 @@ export default async function DebriefPage(props: PageProps<"/app/sessions/[id]/d
   const o = s.outcome ? OUTCOME[s.outcome as keyof typeof OUTCOME] : null;
   const debrief = s.debrief as { summary?: string; top_fixes?: string[]; first_minute_seqs?: number[] } | null;
   const grading = s.debrief_status === "pending" || s.debrief_status === "running";
+  // This session's live share links (RLS: the owner's own).
+  const { data: shares } = await supabase
+    .from("debrief_shares")
+    .select("token, expires_at")
+    .eq("session_id", id)
+    .is("revoked_at", null)
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false });
   // Facts this session stated differently from an earlier one (src/lib/domain/story.ts).
   const history = await pastSessions(supabase, s.case_id as string);
   const changedHere = storyChanges(
@@ -180,6 +191,14 @@ export default async function DebriefPage(props: PageProps<"/app/sessions/[id]/d
               </>
             )}
           </Card>
+          {s.debrief_status === "done" && (
+            <Card className="print:hidden">
+              <h2 className="font-display text-2xl uppercase">Share this debrief</h2>
+              <div className="mt-2">
+                <ShareDebrief sessionId={id} siteUrl={env.siteUrl} active={shares ?? []} />
+              </div>
+            </Card>
+          )}
           {unreached.length > 0 && !grading && (
             <Card>
               <h2 className="font-display text-2xl uppercase">Not reached</h2>
@@ -317,6 +336,8 @@ export default async function DebriefPage(props: PageProps<"/app/sessions/[id]/d
                   <div className="mt-4 rounded-[4px] border border-approved/30 bg-approved/5 p-4">
                     <p className="text-xs text-muted">Your answer, stronger (only your facts)</p>
                     <p className="mt-1 text-sm leading-relaxed">{sc.stronger_answer}</p>
+                    <HearAnswer sessionId={id} seq={t.seq} />
+                    <p className="mt-2 text-xs text-muted">Listen for the pace and the first sentence, then say it in your own words. Don&rsquo;t memorise it.</p>
                   </div>
                 )}
                 {sc.missing_evidence && <p className="mt-3 text-sm text-muted">Evidence gap: {sc.missing_evidence}</p>}

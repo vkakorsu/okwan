@@ -6,7 +6,7 @@ import { site } from "@/lib/site";
  * Training crawlers are allowed too: brand recall inside models is worth more
  * to us than the content. Private app routes are excluded for everyone.
  */
-const privatePaths = ["/api/", "/app", "/admin", "/expert/", "/login", "/forgot", "/setup", "/auth/"];
+const privatePaths = ["/api/", "/app", "/admin", "/expert/", "/login", "/forgot", "/setup", "/auth/", "/share/"];
 
 const answerBots = [
   "Googlebot",

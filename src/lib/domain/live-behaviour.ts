@@ -26,8 +26,9 @@ export function liveBehaviour(plan: SessionPlan): LiveBehaviour {
   return {
     // Patient officers let you pause and think; impatient ones jump in sooner.
     // Never below ~0.7 s, so natural pauses in Ghanaian English aren't cut off.
-    // 0.5–1.1 s. Longer felt like the officer was lagging; shorter cuts off pauses.
-    endOfTurnSilenceMs: Math.round(500 + patience * 600),
+    // 0.7–1.3 s. At 0.5–1.1 s the officer took a mid-sentence pause ("I'm…") as a finished
+    // answer; much longer felt like lag. The officer is also told to say "Go on" to a fragment.
+    endOfTurnSilenceMs: Math.round(700 + patience * 600),
     cutInAfterSec: interrupts ? Math.round(15 + patience * 20) : null,
     typingSilence: plan.events.includes("typing_silence")
       ? { turn: 2 + Math.floor(rng() * 2), seconds: Math.round((3 + rng() * 2.5) * 10) / 10 }

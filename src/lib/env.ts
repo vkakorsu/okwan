@@ -39,6 +39,8 @@ export const env = {
   // Verified against the live API on 26 Sep 2026 (/admin/health).
   geminiLiveModel: first("GEMINI_LIVE_MODEL") ?? "gemini-3.8-live",
   geminiFlashModel: first("GEMINI_FLASH_MODEL") ?? "gemini-3.8-flash",
+  /** Speech for "hear the stronger answer" (docs/PLAN.md §3). */
+  geminiTtsModel: first("GEMINI_TTS_MODEL") ?? "gemini-3.8-flash-tts",
   // Tried in order when the main Flash model is overloaded.
   geminiFlashFallbacks: (first("GEMINI_FLASH_FALLBACKS") ?? "gemini-3.7-flash,gemini-3.5-flash")
     .split(",")

@@ -20,6 +20,9 @@ import { createServiceClient } from "@/lib/supabase/server";
  * function's time limit, move these into Inngest steps unchanged.
  */
 
+/** Documents usually in a sponsor's or relative's name: they never describe the applicant. */
+const THIRD_PARTY_KINDS = new Set(["bank_statement", "sponsor_letter", "property", "business_registration", "invitation_letter"]);
+
 export async function runExtraction(documentId: string) {
   const db = createServiceClient();
   const { data: doc } = await db.from("documents").select("id, case_id, kind, storage_path").eq("id", documentId).single();
@@ -30,11 +33,19 @@ export async function runExtraction(documentId: string) {
     const input = { bytes: new Uint8Array(await file.arrayBuffer()), mimeType: file.type || "application/pdf", kind: doc.kind };
     const [facts, fullText] = await Promise.all([
       extractFacts(input),
-      // The transcription is a bonus: a failure here shouldn't fail the facts.
-      transcribeDocument(input).catch(() => null),
+      // The transcription is a bonus: a failure here shouldn't fail the facts. One retry,
+      // then it's recorded as missing so the documents page can say so.
+      transcribeDocument(input)
+        .catch(() => transcribeDocument(input))
+        .catch((e) => {
+          console.warn("[extraction] full transcription failed:", e instanceof Error ? e.message.slice(0, 200) : e);
+          return null;
+        }),
     ]);
     // Never persist raw passport numbers; only the last four digits live on the case.
     const { appointment, documentLooksLike, notes, legibility, unreadable, ...profileFacts } = facts;
+    // A statement, sponsor letter or deed in someone else's name describes them, not the applicant.
+    if (THIRD_PARTY_KINDS.has(doc.kind)) delete profileFacts.applicant;
 
     // Statement amounts come as printed (usually cedis); convert for the USD fields.
     let fx: { amount: number; currency: string; usd: number; rate: number } | undefined;
@@ -106,7 +117,7 @@ export async function runExtraction(documentId: string) {
     await db
       .from("documents")
       .update({
-        extraction: { documentLooksLike, facts: profileFacts, legibility, unreadable },
+        extraction: { documentLooksLike, facts: profileFacts, legibility, unreadable, transcript: fullText ? "ok" : "failed" },
         full_text: fullText ? redactIdentifiers(fullText).slice(0, 60_000) : null,
         extraction_status: "done",
         extraction_error: null,
@@ -184,7 +195,7 @@ export async function runDebrief(sessionId: string) {
     const plan = session!.plan as SessionPlan;
     const { data: turns } = await db
       .from("turns")
-      .select("seq, officer_text, user_transcript_raw, user_transcript_corrected, user_transcript_asr, started_ms, ended_ms")
+      .select("seq, officer_text, user_transcript_raw, user_transcript_corrected, user_transcript_asr, started_ms, ended_ms, interrupted")
       .eq("session_id", sessionId)
       .order("seq");
 
@@ -264,6 +275,8 @@ export async function runDebrief(sessionId: string) {
       officer: stripToolText(t.officer_text),
       answer: answerText(t),
       seconds: t.started_ms != null && t.ended_ms != null ? (t.ended_ms - t.started_ms) / 1000 : 0,
+      // The officer spoke before they'd finished: don't mark them down for an unfinished answer.
+      ...(t.interrupted ? { cut_off_by_officer: true } : {}),
     }));
     // Grade twice and merge (src/lib/domain/grade-merge.ts); one failed run still yields a debrief.
     const runs = input.length

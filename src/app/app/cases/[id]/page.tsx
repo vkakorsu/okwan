@@ -263,6 +263,16 @@ export default async function CasePage(props: PageProps<"/app/cases/[id]">) {
                   <span className="text-muted">: the facts and numbers on the officer&rsquo;s screen, with a quick quiz</span>
                 </li>
                 <li>
+                  <Link className="underline underline-offset-2" href={`/app/cases/${id}/progress`}>Progress</Link>
+                  <span className="text-muted">: your readiness over time, topic by topic</span>
+                </li>
+                <li>
+                  <Link className="underline underline-offset-2" href={`/app/cases/${id}/social`}>Social media check</Link>
+                  <span className="text-muted">
+                    {caseRow.visa_type === "F1" ? ": required public profiles, checked against your application" : ": do your profiles match your application?"}
+                  </span>
+                </li>
+                <li>
                   <Link className="underline underline-offset-2" href={`/app/cases/${id}/day`}>Interview day</Link>
                   <span className="text-muted">: the embassy from the night before to the decision</span>
                 </li>

@@ -173,6 +173,7 @@ ${
   }. A clear, specific answer needs no follow-up: move on.
 - Only the file is fact. You may mention what's on it; never state a name, amount, date or detail that isn't there.
 - If you didn't catch something, say so ("Sorry?") instead of guessing what they said.
+- An answer that stops mid-sentence, or is only a word or two ("I'm…", "My uncle is…", "because…"), isn't finished. Say "Go on." or nothing, and wait. Don't judge it, log it or end the interview on it.
 - If the applicant asks you to repeat ("What?", "Sorry?", "Pardon?"), repeat or rephrase the question. That isn't an answer: don't judge or log it.
 ${plan.events
   .map((e) => EVENT_TEXT[e])
@@ -207,7 +208,6 @@ export const officerTools = [
       properties: {
         probe_id: { type: "string" },
         quality: { type: "string", enum: ["strong", "adequate", "weak", "contradiction"] },
-        answer_seconds: { type: "number" },
       },
       required: ["probe_id", "quality"],
     },
