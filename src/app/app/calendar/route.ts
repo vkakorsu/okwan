@@ -1,3 +1,5 @@
+import { track } from "@/lib/server/events";
+import { after } from "next/server";
 import { practiceCalendar } from "@/lib/domain/calendar";
 import { env, features } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
@@ -28,6 +30,7 @@ export async function GET() {
     interviewAt: caseRow.interview_at as string,
     siteUrl: env.siteUrl,
   });
+  after(() => track(auth.user.id, "calendar_downloaded"));
   return new Response(ics, {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",

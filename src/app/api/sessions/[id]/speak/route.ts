@@ -1,3 +1,5 @@
+import { track } from "@/lib/server/events";
+import { after } from "next/server";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { encodeWav } from "@/lib/domain/voice";
@@ -32,7 +34,10 @@ export async function POST(req: Request, ctx: RouteContext<"/api/sessions/[id]/s
     const store = admin.storage.from("recordings");
 
     const { data: existing } = await store.list(folder, { search: `${id}-` });
-    if (!existing?.some((f) => f.name === name)) {
+    const cached = Boolean(existing?.some((f) => f.name === name));
+    // Usage and cost: each uncached play is one speech generation.
+    after(() => track(user.id, "hear_it", { generated: !cached }));
+    if (!cached) {
       if ((existing?.length ?? 0) >= MAX_PER_SESSION) throw new HttpError(429, "That's a lot of listening for one interview. Try another session.");
       const pcm = await speakAnswer(text, voice);
       // Copy into an aligned buffer: 16-bit samples, little-endian.

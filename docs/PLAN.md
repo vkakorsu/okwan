@@ -507,7 +507,7 @@ Track:
 - **Institutional seats:** GHS 199–249.
 - **Launch price:** GHS 249 for the first 1,000 passes.
 - **Trust policies:**
-  - a 7-day refund
+  - no refunds (every account gets a free mock first)
   - Second Attempt (the pass reactivates free after a refusal)
   - no auto-renewals
   - never outcome-based pricing

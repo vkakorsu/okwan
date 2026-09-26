@@ -1,3 +1,5 @@
+import { track } from "@/lib/server/events";
+import { after } from "next/server";
 import Link from "next/link";
 import { PrintButton } from "@/components/app/print-button";
 import { BackLink, Card, PageTitle } from "@/components/app/ui";
@@ -27,7 +29,8 @@ function Step({ when, title, children }: { when: string; title: string; children
 }
 
 export default async function DayPage() {
-  const { caseRow } = await requireCase("/app/day");
+  const { user, caseRow } = await requireCase("/app/day");
+  after(() => track(user.id, "day_viewed"));
   const student = caseRow.visa_type === "F1";
   const days = caseRow.interview_at ? daysUntil(caseRow.interview_at) : null;
 

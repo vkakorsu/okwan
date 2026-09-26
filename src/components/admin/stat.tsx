@@ -26,6 +26,7 @@ export function Table({
   empty = "Nothing yet.",
   sortValues,
   initialSort,
+  csvName,
 }: {
   head: string[];
   rows: React.ReactNode[][];
@@ -33,9 +34,10 @@ export function Table({
   /** Plain values to sort each column by (null where a column shouldn't sort). Makes the table sortable. */
   sortValues?: SortValue[][];
   initialSort?: { col: number; dir: "asc" | "desc" };
+  csvName?: string;
 }) {
   if (!rows.length) return <p className="text-sm text-muted">{empty}</p>;
-  if (sortValues) return <SortableTable head={head} rows={rows} sortValues={sortValues} initial={initialSort} />;
+  if (sortValues) return <SortableTable head={head} rows={rows} sortValues={sortValues} initial={initialSort} csvName={csvName} />;
   return (
     <div className="overflow-x-auto rounded-[4px] border border-line">
       <table className="w-full text-left text-sm">

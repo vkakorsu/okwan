@@ -17,7 +17,7 @@ export default async function AdminOverview() {
     db.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", daysAgo(7, now)),
     db.from("cases").select("id", { count: "exact", head: true }),
     db.from("sessions").select("created_at, is_free, case_id").gte("created_at", `${since14}T00:00:00Z`).not("started_at", "is", null).limit(20000),
-    db.from("passes").select("plan, amount_pesewas, purchased_at, refunded_at, case_id").limit(20000),
+    db.from("passes").select("plan, amount_pesewas, purchased_at, case_id").limit(20000),
     db.from("outcomes").select("result").limit(20000),
     db.from("sessions").select("id", { count: "exact", head: true }).eq("debrief_status", "failed").gte("created_at", daysAgo(7, now)),
     db.from("profiles").select("id, email, role, created_at").order("created_at", { ascending: false }).limit(5),
@@ -34,10 +34,9 @@ export default async function AdminOverview() {
   const sessions7 = sessions.filter((s) => s.created_at >= daysAgo(7, now)).length;
 
   const passes = passesRes.data ?? [];
-  const paid = passes.filter((p) => !p.refunded_at && p.amount_pesewas > 0);
+  const paid = passes.filter((p) => p.amount_pesewas > 0);
   const revenue30 = paid.filter((p) => p.purchased_at >= daysAgo(30, now)).reduce((s, p) => s + p.amount_pesewas, 0);
   const revenueAll = paid.reduce((s, p) => s + p.amount_pesewas, 0);
-  const refunded = passes.filter((p) => p.refunded_at).length;
   const byPlan = new Map<string, { n: number; gross: number }>();
   for (const p of paid) {
     const cur = byPlan.get(p.plan) ?? { n: 0, gross: 0 };
@@ -53,11 +52,11 @@ export default async function AdminOverview() {
 
   return (
     <>
-      <PageHead title="Overview">Everything here is live from the database. Money is in cedis, VAT included, after refunds.</PageHead>
+      <PageHead title="Overview">Everything here is live from the database. Money is in cedis, VAT included.</PageHead>
 
       <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Accounts" value={count(users)} sub={`people signed up · ${count(users7)} new this week`} />
-        <Stat label="Applicants" value={count(cases)} sub="cases created (one per person going to an interview)" />
+        <Stat label="Set up to practise" value={count(cases)} sub="accounts that entered their applicant details" />
         <Stat label="Mock interviews" value={byDay.get(today) ?? 0} sub={`today · ${sessions7} this week`} />
         <Stat label="Sales, last 30 days" value={ghs(revenue30)} sub={`${ghs(revenueAll)} since launch`} />
       </div>
@@ -76,7 +75,7 @@ export default async function AdminOverview() {
             sub={`of applicants who practised in the last 14 days (${converted} of ${practising.size})`}
           />
           <Stat label="Real results reported" value={outcomes.length} sub={outcomes.length ? `${approved} approved` : "after their embassy interview"} />
-          <Stat label="Refunds" value={refunded} sub="all time" />
+          <Stat label="Paying customers" value={paying.size} sub="applicants who bought a pack, all time" />
           <Stat label="Debriefs that failed" value={count(failedDebriefs)} sub="this week · should stay at 0" />
         </div>
       </div>

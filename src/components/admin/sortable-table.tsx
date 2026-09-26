@@ -14,12 +14,15 @@ export function SortableTable({
   rows,
   sortValues,
   initial,
+  csvName,
 }: {
   head: string[];
   rows: React.ReactNode[][];
   /** One array per row, one value per column; null = not sortable in that column. */
   sortValues: SortValue[][];
   initial?: { col: number; dir: "asc" | "desc" };
+  /** Offer a CSV download of the sortable columns, as currently sorted. */
+  csvName?: string;
 }) {
   const [sort, setSort] = useState(initial ?? null);
   const sortable = head.map((_, c) => sortValues.some((r) => r[c] !== null && r[c] !== undefined));
@@ -41,7 +44,30 @@ export function SortableTable({
     setSort((s) => (s?.col === col ? { col, dir: s.dir === "asc" ? "desc" : "asc" } : { col, dir: typeof sortValues[0]?.[col] === "number" ? "desc" : "asc" }));
   }
 
+  function downloadCsv() {
+    const cols = head.map((_, c) => c).filter((c) => sortable[c]);
+    const cell = (v: SortValue) => {
+      const t = v === null || v === undefined ? "" : String(v);
+      return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+    };
+    const lines = [cols.map((c) => cell(head[c])).join(","), ...order.map((i) => cols.map((c) => cell(sortValues[i][c])).join(","))];
+    const url = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${csvName}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
+    <div>
+    {csvName && (
+      <div className="mb-2 flex justify-end">
+        <button onClick={downloadCsv} className="text-xs text-muted underline underline-offset-2 hover:text-fg">
+          Download CSV
+        </button>
+      </div>
+    )}
     <div className="overflow-x-auto rounded-[4px] border border-line">
       <table className="w-full text-left text-sm">
         <thead className="bg-fg/[0.03] text-xs uppercase tracking-wider text-muted">
@@ -82,6 +108,7 @@ export function SortableTable({
           ))}
         </tbody>
       </table>
+    </div>
     </div>
   );
 }

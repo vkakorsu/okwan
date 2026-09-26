@@ -44,7 +44,7 @@ All prices include **20% VAT** and can be paid with MTN MoMo, Telecel Cash, Airt
 
 ## 3. Trust policies
 
-- **7-day refund** if you've used at most one interview (done by an admin from the user's page; Paystack returns it to the original wallet or card).
+- **No refunds.** Every account gets a free mock first, so people can judge it before paying. The payment page says so.
 - **No auto-renewals, ever.**
 
 ### 3a. Abuse, now that there's no date

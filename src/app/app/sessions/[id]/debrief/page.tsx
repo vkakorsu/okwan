@@ -1,3 +1,5 @@
+import { track } from "@/lib/server/events";
+import { after } from "next/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { correctTranscript, rateSession, retryDebrief, startDrill, startSession } from "@/app/app/actions";
@@ -49,13 +51,14 @@ export const maxDuration = 300;
 export default async function DebriefPage(props: PageProps<"/app/sessions/[id]/debrief">) {
   const { id } = await props.params;
   const { notice } = await props.searchParams;
-  const { supabase } = await requireUser(`/app/sessions/${id}/debrief`);
+  const { supabase, user } = await requireUser(`/app/sessions/${id}/debrief`);
   const { data: s } = await supabase
     .from("sessions")
     .select("id, case_id, plan, outcome, decision_reasons, debrief, debrief_status, realism_rating, started_at, ended_at, recording_path, referee_state")
     .eq("id", id)
     .maybeSingle();
   if (!s) notFound();
+  after(() => track(user.id, "debrief_viewed", { session: id }));
   const { data: turns } = await supabase
     .from("turns")
     .select("seq, officer_text, user_transcript_raw, user_transcript_corrected, user_transcript_asr, started_ms, ended_ms, scores, red_flags")

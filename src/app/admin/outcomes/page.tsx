@@ -1,5 +1,7 @@
 import { PageHead, Section, Stat, Table } from "@/components/admin/stat";
+import { LEVEL_LABELS, readiness, readinessTopics, type ReadinessLevel } from "@/lib/domain/readiness";
 import { requireAdmin } from "@/lib/server/admin";
+import { latestProfile, pastSessions } from "@/lib/server/repo";
 
 export const metadata = { title: "Real outcomes" };
 
@@ -9,7 +11,7 @@ export default async function AdminOutcomes() {
   const { db } = await requireAdmin();
   const { data } = await db
     .from("outcomes")
-    .select("result, reported_questions, consent_to_aggregate, reported_at, cases(visa_type, sessions(is_free, mode, outcome))")
+    .select("case_id, result, reported_questions, consent_to_aggregate, reported_at, cases(visa_type, interview_at, sessions(is_free, mode, outcome))")
     .order("reported_at", { ascending: false })
     .limit(5000);
   const rows = (data ?? []).map((o) => {
@@ -31,6 +33,23 @@ export default async function AdminOutcomes() {
   for (const q of questions) freq.set(q.toLowerCase(), (freq.get(q.toLowerCase()) ?? 0) + 1);
 
   const topReported = [...freq].sort((a, b) => b[1] - a[1]).slice(0, 100);
+
+  // Readiness as it stood on the interview day (or when the result was reported), per reported case.
+  const levels: ReadinessLevel[] = ["not_started", "building", "getting_close", "nearly_ready", "well_prepared"];
+  const byLevel = new Map<ReadinessLevel, { n: number; approved: number }>(levels.map((l) => [l, { n: 0, approved: 0 }]));
+  await Promise.all(
+    (data ?? []).slice(0, 500).map(async (o) => {
+      const c = o.cases as unknown as { interview_at: string | null } | null;
+      const at = Math.min(Date.parse(c?.interview_at ?? o.reported_at), Date.parse(o.reported_at));
+      const [current, history] = await Promise.all([latestProfile(db, o.case_id), pastSessions(db, o.case_id)]);
+      if (!current) return;
+      const before = history.filter((s) => !s.at || Date.parse(s.at) <= at);
+      const r = readiness(before, readinessTopics(current.profile), at);
+      const bucket = byLevel.get(r.level)!;
+      bucket.n++;
+      if (o.result === "approved") bucket.approved++;
+    }),
+  );
 
   return (
     <>
@@ -55,11 +74,22 @@ export default async function AdminOutcomes() {
         />
       </Section>
 
+      <Section
+        title="By readiness on interview day"
+        note="Readiness measures preparation, not case strength, so it shouldn't predict approval on its own. What to watch for: well-prepared applicants refused on answers they had practised, which would mean readiness over-credits something."
+      >
+        <Table
+          head={["Readiness on the day", "Reports", "Approved"]}
+          rows={levels.map((l) => [LEVEL_LABELS[l], byLevel.get(l)!.n, pct(byLevel.get(l)!.approved, byLevel.get(l)!.n)])}
+        />
+      </Section>
+
       <Section title="Questions applicants say they were asked" note="Only from users who consented. This feeds the probe taxonomy and the Reported Questions pages.">
         <Table
           head={["Question", "Times reported"]}
           rows={topReported.map(([q, n]) => [q, n])}
           sortValues={topReported.map(([q, n]) => [q, n])}
+          csvName="okwan-reported-questions"
           empty="None yet."
         />
       </Section>

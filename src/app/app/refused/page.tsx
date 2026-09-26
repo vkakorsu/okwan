@@ -1,3 +1,5 @@
+import { track } from "@/lib/server/events";
+import { after } from "next/server";
 import Link from "next/link";
 import { startDrill, startSession } from "@/app/app/actions";
 import { ReapplyCheck } from "@/components/app/reapply-check";
@@ -13,7 +15,8 @@ export const metadata = { title: "Refused before" };
  * sometimes the answer is to wait.
  */
 export default async function RefusedPage() {
-  const { supabase, id, caseRow } = await requireCase("/app/refused");
+  const { user, supabase, id, caseRow } = await requireCase("/app/refused");
+  after(() => track(user.id, "refused_viewed"));
   const [current, { data: outcome }] = await Promise.all([
     latestProfile(supabase, id),
     supabase.from("outcomes").select("result").eq("case_id", id).maybeSingle(),

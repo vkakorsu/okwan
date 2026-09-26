@@ -14,7 +14,7 @@ US visa interview practice built for Ghanaians. You upload your documents, then 
 | Area | Where |
 |---|---|
 | **Interview engine**: the Director (plans each session per user), the probe taxonomy, officer sampling, Case Scan, the Referee (rules-based outcomes), officer instructions, the rewrite validator, delivery metrics | `src/lib/domain/` |
-| **Pass rules and entitlements**: the 60-day ceiling, appointment proof, date moves, refunds, free and sprint limits | `src/lib/domain/pass.ts`, `entitlement.ts` |
+| **Pass rules and entitlements**: the 60-day ceiling, appointment proof, date moves, free and sprint limits | `src/lib/domain/pass.ts`, `entitlement.ts` |
 | **Marketing site and SEO** | `src/app/page.tsx`, `src/components/home/`, `src/app/{robots,sitemap,manifest,opengraph-image}` |
 | **Auth**: phone code and Google (Supabase), session refresh in `src/proxy.ts` | `src/app/login`, `src/app/auth` |
 | **Cases, documents and fact extraction** (Gemini Flash, with disagreements between documents flagged), and the confirm-your-facts form | `src/app/app/cases/[id]/…`, `src/lib/server/jobs.ts` |

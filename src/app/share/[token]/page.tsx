@@ -1,3 +1,5 @@
+import { track } from "@/lib/server/events";
+import { after } from "next/server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PrintButton } from "@/components/app/print-button";
@@ -47,6 +49,7 @@ export default async function SharedDebrief(props: PageProps<"/share/[token]">) 
     .gt("expires_at", new Date().toISOString())
     .maybeSingle();
   if (!share) notFound();
+  after(() => track(null, "share_opened", { session: share.session_id as string }));
 
   const { data: s } = await db
     .from("sessions")

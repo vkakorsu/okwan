@@ -2,17 +2,20 @@ import { PageHead, Section, Stat, Table } from "@/components/admin/stat";
 import type { SessionPlan } from "@/lib/domain/director";
 import { officerStyle, REAL_OFFICER_STYLE } from "@/lib/domain/officer-style";
 import { getProbe } from "@/lib/domain/probes";
-import { daysAgo, requireAdmin } from "@/lib/server/admin";
+import { RangeTabs } from "@/components/admin/range-tabs";
+import { officerGraderAgreement } from "@/lib/domain/judge-agreement";
+import { rangeFrom, requireAdmin } from "@/lib/server/admin";
 import { DEBRIEF_STATUS_LABELS, outcomeLabel, topicLabel } from "@/lib/labels";
 
 export const metadata = { title: "Session quality" };
 
 const pct = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)}%` : "–");
 
-export default async function AdminQuality() {
+export default async function AdminQuality(props: PageProps<"/admin/quality">) {
   const { db } = await requireAdmin();
-  const since = daysAgo(30);
-  const [{ data: sessionRows }, { data: probeRows }, { data: latencyRows }, { data: officerRows }] = await Promise.all([
+  const { range, since: from, label } = rangeFrom(await props.searchParams);
+  const since = from ?? "1970-01-01T00:00:00Z";
+  const [{ data: sessionRows }, { data: probeRows }, { data: latencyRows }, { data: officerRows }, { data: pairRows }] = await Promise.all([
     // Sessions that never started (a mode clicked, then left) would skew every figure.
     db
       .from("sessions")
@@ -20,7 +23,7 @@ export default async function AdminQuality() {
       .gte("created_at", since)
       .not("started_at", "is", null)
       .limit(20000),
-    db.from("probe_results").select("probe_id, quality").gte("created_at", since).limit(50000),
+    db.from("probe_results").select("session_id, probe_id, quality, created_at").gte("created_at", since).limit(50000),
     db
       .from("turns")
       .select("reply_latency_ms, sessions!inner(created_at)")
@@ -35,6 +38,13 @@ export default async function AdminQuality() {
       .neq("sessions.mode", "drill")
       .gte("sessions.created_at", since)
       .limit(50000),
+    // The grader's scores per answer, to compare with the live officer's judgement of the same topic.
+    db
+      .from("turns")
+      .select("session_id, scores, sessions!inner(created_at)")
+      .not("scores", "is", null)
+      .gte("sessions.created_at", since)
+      .limit(100000),
   ]);
   const style = officerStyle((officerRows ?? []).map((r) => String(r.officer_text)));
   const perSession = new Map<string, number>();
@@ -74,6 +84,11 @@ export default async function AdminQuality() {
   }
   const sharing = [...byCase].filter(([, v]) => v.fps.size >= 3).sort((a, b) => b[1].fps.size - a[1].fps.size);
 
+  const agreement = officerGraderAgreement(
+    (probeRows ?? []).map((r) => ({ sessionId: r.session_id as string, probeId: r.probe_id as string, quality: r.quality as "strong" | "adequate" | "weak" | "contradiction" })),
+    (pairRows ?? []).map((t) => ({ sessionId: t.session_id as string, scores: t.scores })),
+  );
+
   // Worst first: the share of weak or contradictory answers. Sortable by any column.
   const struggle = [...probes].sort((a, b) => (b[1].weak + b[1].contradiction) / b[1].n - (a[1].weak + a[1].contradiction) / a[1].n);
 
@@ -88,7 +103,8 @@ export default async function AdminQuality() {
 
   return (
     <>
-      <PageHead title="Session quality">Last 30 days. Is the officer realistic, varied and fair? See docs/PLAN.md §2.2.7.</PageHead>
+      <PageHead title="Session quality">The {label}. Is the officer realistic, varied and fair? See docs/PLAN.md §2.2.7.</PageHead>
+      <RangeTabs path="/admin/quality" range={range} />
       <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
         <Stat label="“Felt real”" value={avgRating} sub={`out of 5 · ${rated.length} ratings`} />
         <Stat label="Question novelty" value={pct(novelty, 1)} sub="not asked in the user's last 3 sessions" />
@@ -112,6 +128,23 @@ export default async function AdminQuality() {
         />
       </Section>
 
+      <Section
+        title="Does the officer judge like the grader?"
+        note="The live officer's judgement of each answer next to the independent debrief grade of the same answer (graded twice, anchored scores). A big gap means the officer is too generous or too harsh on that topic; it's the early warning that live judging has drifted."
+      >
+        <p className="mb-3 text-sm">
+          Agree on <strong>{pct(agreement.overall.agree, agreement.overall.n)}</strong> of {agreement.overall.n} answers · officer more generous on{" "}
+          {pct(agreement.overall.officerHigher, agreement.overall.n)} · harsher on {pct(agreement.overall.officerLower, agreement.overall.n)}
+        </p>
+        <Table
+          head={["Topic", "Answers", "Agree", "Officer more generous", "Officer harsher"]}
+          rows={agreement.byTopic.map((t) => [topicLabel(t.probeId), t.n, pct(t.agree, t.n), pct(t.officerHigher, t.n), pct(t.officerLower, t.n)])}
+          sortValues={agreement.byTopic.map((t) => [topicLabel(t.probeId), t.n, t.agree / t.n, t.officerHigher / t.n, t.officerLower / t.n])}
+          initialSort={{ col: 2, dir: "asc" }}
+          empty="No answers graded by both yet."
+        />
+      </Section>
+
       <Section title="Simulated outcomes" note="Share of finished sessions. If nearly everyone is approved or refused, the Referee's thresholds need tuning.">
         <Table head={["Outcome", "Sessions", "Share"]} rows={outcomes.map(([o, n]) => [outcomeLabel(o), n, pct(n, ended.length)])} />
       </Section>
@@ -131,6 +164,7 @@ export default async function AdminQuality() {
             pct(v.contradiction, v.n),
           ])}
           sortValues={struggle.map(([id, v]) => [topicLabel(id), null, v.n, v.weak / v.n, v.contradiction / v.n])}
+          csvName="okwan-topics"
           empty="No graded answers yet."
         />
       </Section>

@@ -1,3 +1,5 @@
+import { track } from "@/lib/server/events";
+import { after } from "next/server";
 import Link from "next/link";
 import { setPacked } from "@/app/app/actions";
 import { SocialChecklist } from "@/components/app/social-checklist";
@@ -9,7 +11,8 @@ import { latestProfile } from "@/lib/server/repo";
 export const metadata = { title: "Social media check" };
 
 export default async function SocialPage() {
-  const { supabase, id, caseRow } = await requireCase("/app/social");
+  const { user, supabase, id, caseRow } = await requireCase("/app/social");
+  after(() => track(user.id, "social_viewed"));
   const current = await latestProfile(supabase, id);
   const student = caseRow.visa_type === "F1";
 

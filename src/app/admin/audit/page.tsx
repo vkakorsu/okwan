@@ -5,9 +5,12 @@ import { formatDateTime } from "@/lib/labels";
 
 const AUDIT_ACTIONS: Record<string, string> = {
   view_case_facts: "Viewed case facts",
-  refund_pass: "Refunded a pack",
   grant_pass: "Granted a pack",
   set_role: "Changed role",
+  view_session: "Opened a session",
+  export_user: "Exported a user's data",
+  delete_user: "Deleted an account",
+  retry_job: "Retried a failed job",
 };
 
 export const metadata = { title: "Audit log" };
@@ -37,6 +40,7 @@ export default async function AdminAudit() {
             r.reason,
           ])}
           sortValues={(data ?? []).map((r) => [r.created_at, String(r.admin_id), AUDIT_ACTIONS[r.action] ?? r.action, r.target_id ? String(r.target_id) : null, r.reason])}
+          csvName="okwan-audit-log"
           empty="No admin actions yet."
         />
       </div>

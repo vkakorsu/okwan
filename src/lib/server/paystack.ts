@@ -99,10 +99,3 @@ export async function recordPayment(db: SupabaseClient, tx: PaystackTransaction)
   return "recorded";
 }
 
-/** Full refund of a transaction. Paystack returns the refund to the original MoMo wallet or card. */
-export function refundTransaction(reference: string) {
-  return paystack<{ status: string }>("/refund", {
-    method: "POST",
-    body: JSON.stringify({ transaction: reference }),
-  });
-}

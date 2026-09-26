@@ -1,3 +1,5 @@
+import { track } from "@/lib/server/events";
+import { after } from "next/server";
 import Link from "next/link";
 import { ReadinessChart } from "@/components/app/readiness-chart";
 import { BackLink, Card, PageTitle } from "@/components/app/ui";
@@ -20,7 +22,8 @@ const CELL: Record<AnswerQuality, { glyph: string; cls: string; label: string }>
 const STATUS: Record<TopicStatus, string> = { solid: "Solid", improving: "Improving", weak: "Weak last time", untested: "Not asked yet" };
 
 export default async function ProgressPage() {
-  const { supabase, id, caseRow } = await requireCase("/app/progress");
+  const { user, supabase, id, caseRow } = await requireCase("/app/progress");
+  after(() => track(user.id, "progress_viewed"));
   const [current, history] = await Promise.all([latestProfile(supabase, id), pastSessions(supabase, id)]);
   const topics = current ? readinessTopics(current.profile) : [];
   const now = readiness(history, topics);

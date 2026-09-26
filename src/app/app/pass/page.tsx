@@ -20,7 +20,7 @@ export default async function PassPage(props: PageProps<"/app/pass">) {
       <PageTitle eyebrow="Interviews and drills" title="Pay for what you use">
         {typeof reason === "string" ? `${reason} ` : ""}
         One payment, no subscription. Every started interview or drill uses one credit; clicking and leaving costs nothing.
-        MoMo or card, VAT included. Refundable within 7 days if you&rsquo;ve used at most one interview.
+        MoMo or card, VAT included. Payments aren&rsquo;t refundable, so try the free mock first.
       </PageTitle>
       <p className="mb-2 text-sm">
         For <strong>{caseRow.applicant_name}</strong> ({caseRow.visa_type === "F1" ? "F-1 student" : "B1/B2 visitor"}). Credits stay

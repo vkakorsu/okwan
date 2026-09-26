@@ -9,13 +9,13 @@ export default async function AdminPayments() {
   const { db } = await requireAdmin();
   const { data } = await db
     .from("passes")
-    .select("id, plan, amount_pesewas, paystack_reference, purchased_at, refunded_at, interviews, drills, cases(user_id, applicant_name)")
+    .select("id, plan, amount_pesewas, paystack_reference, purchased_at, interviews, drills, cases(user_id, applicant_name)")
     .order("purchased_at", { ascending: false })
     .limit(500);
   const passes = data ?? [];
   const paid = passes.filter((p) => p.amount_pesewas > 0);
-  const net = paid.filter((p) => !p.refunded_at).reduce((s, p) => s + p.amount_pesewas, 0);
-  const refundedAmt = paid.filter((p) => p.refunded_at).reduce((s, p) => s + p.amount_pesewas, 0);
+  const net = paid.reduce((s, p) => s + p.amount_pesewas, 0);
+  const comped = passes.filter((p) => p.amount_pesewas === 0).length;
   // VAT is 20% of the net price, so it's 1/6 of a VAT-inclusive amount; Paystack takes 1.95% of the gross.
   const vat = Math.round(net / 6);
   const fees = Math.round(net * 0.0195);
@@ -28,11 +28,11 @@ export default async function AdminPayments() {
         <Stat label="Net sales" value={ghs(net)} sub={`${paid.length} paid · ${week} this week`} />
         <Stat label="VAT owed (est.)" value={ghs(vat)} sub="to GRA" />
         <Stat label="Paystack fees (est.)" value={ghs(fees)} />
-        <Stat label="Refunded" value={ghs(refundedAmt)} sub={`${paid.filter((p) => p.refunded_at).length} refunds`} />
+        <Stat label="Comped packs" value={comped} sub="granted free by an admin" />
       </div>
       <Section title="Packs">
         <Table
-          head={["When", "Applicant", "Pack", "Amount", "Reference", "Interviews/drills", "Status"]}
+          head={["When", "Applicant", "Pack", "Amount", "Reference", "Interviews/drills", "Type"]}
           rows={passes.map((p) => {
             const c = p.cases as unknown as { user_id: string; applicant_name: string } | null;
             return [
@@ -48,13 +48,14 @@ export default async function AdminPayments() {
               p.amount_pesewas ? ghs(p.amount_pesewas) : "Comped",
               <span key="r" className="font-mono text-xs">{p.paystack_reference}</span>,
               `${p.interviews}/${p.drills}`,
-              p.refunded_at ? "Refunded" : "Active",
+              p.amount_pesewas ? "Paid" : "Comped",
             ];
           })}
           sortValues={passes.map((p) => {
             const c = p.cases as unknown as { applicant_name: string } | null;
-            return [p.purchased_at, c?.applicant_name ?? null, packLabel(p.plan), p.amount_pesewas ?? 0, null, p.interviews, p.refunded_at ? "Refunded" : "Active"];
+            return [p.purchased_at, c?.applicant_name ?? null, packLabel(p.plan), p.amount_pesewas ?? 0, null, p.interviews, p.amount_pesewas ? "Paid" : "Comped"];
           })}
+          csvName="okwan-payments"
           empty="No packs yet."
         />
       </Section>

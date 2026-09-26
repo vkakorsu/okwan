@@ -142,15 +142,15 @@ export async function runExtraction(documentId: string) {
       })
       .eq("id", doc.id);
   } catch (e) {
+    // The raw error goes to the logs, never to the applicant.
+    console.error("[extraction] failed", doc.id, doc.kind, e instanceof Error ? e.message.slice(0, 500) : e);
     await db
       .from("documents")
       .update({
         extraction_status: "failed",
         extraction_error: isTransient(e)
           ? "The reading service was busy. Try again in a minute."
-          : e instanceof Error
-            ? e.message.slice(0, 300)
-            : "failed",
+          : "We couldn't read this file. Try again; if it keeps failing, upload it as a PDF.",
       })
       .eq("id", doc.id);
   }

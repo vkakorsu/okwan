@@ -33,6 +33,7 @@ import {
   type CaseRow,
 } from "@/lib/server/repo";
 import { createServiceClient } from "@/lib/supabase/server";
+import { track } from "@/lib/server/events";
 
 const PLANNER_VERSION = "director-v1";
 
@@ -491,6 +492,7 @@ export async function createShare(sessionId: string, _prev: ShareState): Promise
   const { error } = await admin.from("debrief_shares").insert({ token, session_id: sessionId, created_by: user.id });
   if (error) return { error: "Couldn't create the link. Try again." };
   revalidatePath(`/app/sessions/${sessionId}/debrief`);
+  after(() => track(user.id, "share_created", { session: sessionId }));
   return { url: `${env.siteUrl}/share/${token}` };
 }
 

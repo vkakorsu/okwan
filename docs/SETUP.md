@@ -24,7 +24,7 @@ The app runs without any keys. Each feature shows a "not configured" state until
 6. **Document deletion:** `vercel.json` runs `/api/cron/cleanup` daily. It deletes documents past `delete_after` (30 days) from both Storage and the database. Set `CRON_SECRET` in Vercel so only the cron can call it.
 
 ## Admin dashboard (`/admin`)
-- **Apply migration `20260926000005_admin.sql`** (the audit log). Until it's applied, sensitive actions are blocked: viewing case facts, refunds, comped passes and role changes.
+- **Apply migration `20260926000005_admin.sql`** (the audit log). Until it's applied, sensitive actions are blocked: viewing case facts, comped passes and role changes.
 - **Make someone an admin** in the Supabase SQL editor:
   `insert into public.admin_invites (email) values ('you@example.com');` (becomes admin on sign-up), or for an existing account `update public.profiles set role = 'admin' where email = 'you@example.com';`
 - **Access control:**

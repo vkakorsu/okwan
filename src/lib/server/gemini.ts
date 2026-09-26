@@ -3,7 +3,8 @@ import { Behavior, EndSensitivity, GoogleGenAI, Modality, type GenerateContentPa
 import { z } from "zod";
 import type { CaseProfile } from "@/lib/domain/case";
 import { GeneratedCaseQuestions } from "@/lib/domain/case-questions";
-import { Claim, CLAIM_KEYS } from "@/lib/domain/story";
+import { CLAIM_KEYS } from "@/lib/domain/story";
+import { Debrief, geminiJsonSchema } from "@/lib/domain/gemini-schema";
 import type { SessionPlan } from "@/lib/domain/director";
 import { ExtractedFacts } from "@/lib/domain/draft";
 import { liveBehaviour } from "@/lib/domain/live-behaviour";
@@ -45,11 +46,8 @@ async function flash(params: Omit<GenerateContentParameters, "model">) {
   throw last;
 }
 
-function jsonSchema(schema: z.ZodType) {
-  const out = z.toJSONSchema(schema) as Record<string, unknown>;
-  delete out.$schema;
-  return out;
-}
+/** Cleaned to what Gemini accepts (src/lib/domain/gemini-schema.ts); anything else fails the whole call. */
+const jsonSchema = geminiJsonSchema;
 
 /* ------------------------------------------------------------ extraction */
 
@@ -199,29 +197,7 @@ export async function transcribeAnswer(input: { wav: Uint8Array; question: strin
 
 /* --------------------------------------------------------------- debrief */
 
-export const GradedTurn = z.object({
-  seq: z.number().int(),
-  probe_id: z.string().nullable(),
-  testing: z.enum(["purpose", "intent", "ties", "funding", "sponsor", "academic", "career", "history", "credibility", "other"]),
-  scores: z.object({
-    directness: z.number().int().min(1).max(5),
-    specificity: z.number().int().min(1).max(5),
-    consistency: z.number().int().min(1).max(5),
-    conciseness: z.number().int().min(1).max(5),
-  }),
-  red_flags: z.array(z.string().max(120)).max(5),
-  stronger_answer: z.string().max(400).nullable(),
-  missing_evidence: z.string().max(300).nullable(),
-});
-
-export const Debrief = z.object({
-  summary: z.string().max(600),
-  top_fixes: z.array(z.string().max(200)).min(1).max(3),
-  turns: z.array(GradedTurn),
-  /** Facts the applicant stated, for the story tracker (src/lib/domain/story.ts). */
-  claims: z.array(Claim).max(30).default([]),
-});
-export type Debrief = z.infer<typeof Debrief>;
+export { Debrief, GradedTurn } from "@/lib/domain/gemini-schema";
 
 const DEBRIEF_RULES = `You are a strict, kind US visa interview coach for Ghanaian applicants. Grade each applicant answer.
 Rules for "stronger_answer": rewrite the applicant's answer in 1–2 short sentences (under 20 seconds spoken) using ONLY facts in the confirmed profile or in the applicant's own words. Never invent people, numbers, employers, places or plans. If the true facts are weak, set stronger_answer to the best honest version and explain in "missing_evidence" what evidence is missing. Never suggest lying or hiding facts.

@@ -58,6 +58,15 @@ export const env = {
   // Cedis per US dollar, for converting statement balances. Approximate: the
   // user sees the conversion and confirms or corrects the dollar figure.
   fxGhsPerUsd: Number(first("FX_GHS_PER_USD") ?? 11.5),
+  /**
+   * Rough Gemini costs in USD for the admin's cost estimates (not billing).
+   * Set them from the Google Cloud billing report for real figures.
+   */
+  costUsd: {
+    liveMinute: Number(first("COST_USD_LIVE_MINUTE") ?? 0.03),
+    flashCall: Number(first("COST_USD_FLASH_CALL") ?? 0.003),
+    speech: Number(first("COST_USD_SPEECH") ?? 0.002),
+  },
 };
 
 export const features = {

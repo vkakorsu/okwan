@@ -1,3 +1,5 @@
+import { track } from "@/lib/server/events";
+import { after } from "next/server";
 import Link from "next/link";
 import { Flashcards } from "@/components/app/flashcards";
 import { PrintButton } from "@/components/app/print-button";
@@ -11,7 +13,8 @@ import { latestProfile } from "@/lib/server/repo";
 export const metadata = { title: "Know your file" };
 
 export default async function FactsPage() {
-  const { supabase, id, caseRow } = await requireCase("/app/facts");
+  const { user, supabase, id, caseRow } = await requireCase("/app/facts");
+  after(() => track(user.id, "facts_viewed"));
   const current = await latestProfile(supabase, id);
   const { data: notes } = await supabase
     .from("case_notes")
