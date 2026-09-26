@@ -681,7 +681,7 @@ export function LiveRoom(props: Props) {
           )}
           {(phase === "ready" || phase === "error") && (
             <div className="relative mx-5 mb-4 sm:mx-8">
-              <PreflightCheck targetDurationSec={props.targetDurationSec} />
+              <PreflightCheck />
             </div>
           )}
           <div className="perforated" />
@@ -708,7 +708,7 @@ export function LiveRoom(props: Props) {
           </div>
         </div>
         <p className="mx-auto mt-4 max-w-md text-center text-xs text-muted">
-          Practice simulation. The outcome is a training signal, not a prediction. Uses about 3–5 MB of data per minute.
+          Practice simulation. The outcome is a training signal, not a prediction.
         </p>
       </div>
     </div>

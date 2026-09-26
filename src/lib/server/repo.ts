@@ -9,6 +9,8 @@ import type { PastSession, ProbeResult, SessionPlan } from "@/lib/domain/directo
 import { creditBalance, type Balance } from "@/lib/domain/credits";
 import { drillEntitlement, entitlement, type Entitlement } from "@/lib/domain/entitlement";
 import { isDisposableEmail } from "@/lib/domain/abuse";
+import { FREE_DRILLS_PER_ACCOUNT } from "@/lib/domain/entitlement";
+import { FREE_MOCKS_PER_ACCOUNT } from "@/lib/domain/identity";
 import { env, features } from "@/lib/env";
 import { createServiceClient } from "@/lib/supabase/server";
 
@@ -241,20 +243,29 @@ export async function accountCaseId(db: SupabaseClient, userId: string): Promise
   return (data?.id as string | undefined) ?? null;
 }
 
-/** What the account can still use, for the top bar: the same balance the Practice card shows. */
+/**
+ * What the account can still use, for the top bar: paid credits, plus the free
+ * mock and free drills everyone gets (1 and 3, per person across accounts).
+ */
 export async function accountCredits(db: SupabaseClient, userId: string) {
   const caseId = await accountCaseId(db, userId);
+  const [freeMocksUsed, freeDrillsUsed] = await Promise.all([freeUsed(db, userId, false), freeUsed(db, userId, true)]);
+  const free = {
+    freeInterviews: Math.max(0, FREE_MOCKS_PER_ACCOUNT - freeMocksUsed),
+    freeDrills: Math.max(0, FREE_DRILLS_PER_ACCOUNT - freeDrillsUsed),
+  };
   // Always /app/pass: the top bar lives in the layout, which isn't re-rendered when the case is
   // first set up, so a link built from "no case yet" must still be right afterwards.
-  if (!caseId) return { plan: null, interviews: 0, drills: 0, buyHref: "/app/pass" };
+  if (!caseId) return { plan: null, interviews: 0, drills: 0, ...free, buyHref: "/app/pass" };
   const [balance, { data: passes }] = await Promise.all([
     caseCredits(db, caseId),
-    db.from("passes").select("plan").eq("case_id", caseId).is("refunded_at", null).order("purchased_at", { ascending: false }).limit(1),
+    db.from("passes").select("plan").eq("case_id", caseId).order("purchased_at", { ascending: false }).limit(1),
   ]);
   return {
     plan: (passes?.[0]?.plan as string | undefined) ?? null,
     interviews: balance.interviews,
     drills: balance.drills,
+    ...free,
     buyHref: `/app/pass`,
   };
 }

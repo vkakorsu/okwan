@@ -158,7 +158,6 @@ export default async function Home(props: PageProps<"/app">) {
                   {(["real", "practice", "dress_rehearsal", "drill"] as const).map((m) => (
                     <li key={m} className="py-3">
                       <span className="font-semibold">{MODE_INFO[m].name}</span>
-                      <span className="label ml-2 text-muted">{MODE_INFO[m].length}</span>
                       <span className="mt-1 block text-sm text-muted">{MODE_INFO[m].body}</span>
                     </li>
                   ))}
@@ -175,7 +174,6 @@ export default async function Home(props: PageProps<"/app">) {
                     <li key={m} className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 py-4">
                       <span className="min-w-0 flex-1 basis-64">
                         <span className="font-semibold">{info.name}</span>
-                        <span className="label ml-2 text-muted">{info.length}</span>
                         <span className="mt-1 block text-sm text-muted">{info.body}</span>
                       </span>
                       <form action={startSession.bind(null, id, m === "free" ? "real" : m)}>

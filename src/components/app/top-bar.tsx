@@ -6,11 +6,19 @@ export interface TopBarCredits {
   plan: string | null;
   interviews: number;
   drills: number;
+  /** The free mock and free drills still unused (everyone gets 1 and 3). */
+  freeInterviews: number;
+  freeDrills: number;
   buyHref: string;
 }
 
 /** The app's top bar: logo, what's left to use, Home and Sign out. */
 export function TopBar({ credits }: { credits: TopBarCredits }) {
+  // Paid credits are used first; with none left, the free allowance is what's usable.
+  const interviews = credits.interviews || credits.freeInterviews;
+  const drills = credits.drills || credits.freeDrills;
+  const freeInterviews = !credits.interviews && credits.freeInterviews > 0;
+  const freeDrills = !credits.drills && credits.freeDrills > 0;
   const hasCredits = credits.interviews > 0 || credits.drills > 0;
   return (
     <header className="sticky top-0 z-30 border-b print:hidden border-ink bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-paper/85">
@@ -29,14 +37,18 @@ export function TopBar({ credits }: { credits: TopBarCredits }) {
               {credits.plan ? packLabel(credits.plan) : "Free"}
             </span>
             <span className="flex items-center gap-1.5 px-3 tabular">
-              <strong>{credits.interviews}</strong>
+              <strong>{interviews}</strong>
               <span className="text-muted">
-                <span className="sm:hidden">left</span>
-                <span className="hidden sm:inline">interview{credits.interviews === 1 ? "" : "s"}</span>
+                <span className="sm:hidden">{freeInterviews ? "free" : "left"}</span>
+                <span className="hidden sm:inline">
+                  {freeInterviews ? "free " : ""}interview{interviews === 1 ? "" : "s"}
+                </span>
               </span>
               <span className="hidden text-muted sm:inline">·</span>
-              <strong className="hidden sm:inline">{credits.drills}</strong>
-              <span className="hidden text-muted sm:inline">drill{credits.drills === 1 ? "" : "s"}</span>
+              <strong className="hidden sm:inline">{drills}</strong>
+              <span className="hidden text-muted sm:inline">
+                {freeDrills ? "free " : ""}drill{drills === 1 ? "" : "s"}
+              </span>
             </span>
             <span className="hidden items-center border-l border-ink px-3 font-semibold text-stamp group-hover:bg-stamp group-hover:text-on-ink md:flex">
               {hasCredits ? "Get more" : "Get interviews"}

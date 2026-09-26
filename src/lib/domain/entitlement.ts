@@ -11,7 +11,13 @@ export type Entitlement =
   | { kind: "free"; reason: string }
   | { kind: "none"; reason: string };
 
-export const FREE_MOCK_SECONDS = 90;
+/**
+ * The free mock runs like any interview (the officer decides when they've
+ * heard enough), within a hidden ceiling that bounds its cost. Never shown
+ * to users: a real interview has no advertised length.
+ */
+export const FREE_MOCK_MAX_SECONDS = 180;
+export const FREE_MOCK_MAX_TOPICS = 3;
 /** One-question drills: a few free to show the value. */
 export const FREE_DRILLS_PER_ACCOUNT = 3;
 
@@ -21,7 +27,7 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 export function entitlement(input: { credits: Balance; freeSessionsUsed: number; freeBlocked?: string | null }): Entitlement {
   if (input.credits.interviews > 0) return { kind: "full", reason: `${plural(input.credits.interviews, "interview")} left` };
   if (input.freeSessionsUsed === 0 && input.freeBlocked) return { kind: "none", reason: input.freeBlocked };
-  if (input.freeSessionsUsed === 0) return { kind: "free", reason: "Your free 90-second mock" };
+  if (input.freeSessionsUsed === 0) return { kind: "free", reason: "Your free mock interview" };
   return { kind: "none", reason: "You've used your interviews. Get more to keep practising." };
 }
 

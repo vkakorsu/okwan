@@ -32,7 +32,7 @@ export const plans: Plan[] = [
     name: "Free",
     priceGhs: 0,
     summary: "See how the officer will read your case, and try one interview.",
-    features: ["Case Scan and what-to-bring list", "One 90-second interview with a full debrief", `${FREE_DRILLS_PER_ACCOUNT} drills`],
+    features: ["Case Scan and what-to-bring list", "One mock interview with a full debrief", `${FREE_DRILLS_PER_ACCOUNT} drills`],
   },
   pack("prep", "Enough to find your weak answers and fix them."),
   pack("full", "Enough to get every key answer solid with different officers, then a dress rehearsal.", true),

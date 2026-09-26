@@ -108,7 +108,7 @@ export function nextStep(i: NextStepInput): NextStep {
     return step(
       "first",
       i.canInterview === "free" ? "Take your free mock" : "Take your first interview",
-      i.canInterview === "free" ? "90 seconds with an officer who has read your file, then an honest debrief." : "A new officer who has read your file, then an honest debrief.",
+      i.canInterview === "free" ? "An officer who has read your file, then an honest debrief." : "A new officer who has read your file, then an honest debrief.",
       { kind: "session", mode: "real", label: i.canInterview === "free" ? "Start free mock" : "Start" },
     );
   }

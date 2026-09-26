@@ -494,7 +494,7 @@ Track:
 ## 8. Go-to-market and pricing
 
 **Full pricing model, unit economics and pricing tests: [`PRICING.md`](PRICING.md).** In summary:
-- **Free:** full Case Scan, one 90-second mock and 5 drills.
+- **Free:** full Case Scan, one mock interview (the officer decides its length, within a hidden cost ceiling) and 3 drills.
 - **Sprint:** GHS 149 for 3 mocks. The full amount counts toward a Pass upgrade.
 - **Full Prep ⭐:** GHS 299 for 10 full interviews and 60 drills, usable for 6 months (superseded the date-based Interview Pass; see PRICING.md). That's about 3.3% of F-1 government fees.
 - **Family Pass:** GHS 599, including joint-interview mode.

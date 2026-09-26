@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CaseProfile } from "../case";
 import { factSheet, flashcards } from "../fact-sheet";
 import { amaF1, kofiB1B2 } from "../fixtures";
-import { assessMic, assessNetwork, dataEstimateMb } from "../preflight";
+import { assessMic, assessNetwork, DATA_MB_PER_MINUTE } from "../preflight";
 
 describe("know your file", () => {
   it("lays out the officer's facts with the numbers marked", () => {
@@ -45,10 +45,8 @@ describe("mic and connection check", () => {
     expect(assessNetwork([]).ok).toBe(false);
   });
 
-  it("estimates data for the whole interview including the recording", () => {
-    const d = dataEstimateMb(180);
-    expect(d.low).toBeGreaterThan(10);
-    expect(d.high).toBeGreaterThan(d.low);
+  it("states data per minute, never a per-interview total that would hint at its length", () => {
+    expect(DATA_MB_PER_MINUTE.high).toBeGreaterThan(DATA_MB_PER_MINUTE.low);
   });
 });
 

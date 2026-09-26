@@ -32,7 +32,7 @@ export default function ScanPage() {
     <>
       <Header />
       <main id="main" className="mx-auto max-w-7xl px-4 py-12 sm:px-8 sm:py-16">
-        <p className="label text-muted">Free · 2 minutes · no signup</p>
+        <p className="label text-muted">Free · no signup</p>
         <h1 className="font-display mt-3 max-w-4xl text-[clamp(2.6rem,6vw,5.2rem)] uppercase leading-[0.95]">
           Where will the officer press?
         </h1>

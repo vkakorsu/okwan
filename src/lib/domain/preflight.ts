@@ -38,11 +38,9 @@ export function assessNetwork(roundTripsMs: readonly number[], effectiveType?: s
 }
 
 /**
- * Data for one interview, in MB: the mic streamed up and the officer's voice
- * down (about 3–5 MB a minute), plus the recording uploaded afterwards for
- * playback (about 2 MB a minute).
+ * Data per minute at the window, in MB: the mic streamed up and the officer's
+ * voice down (about 3–5 MB), plus the recording uploaded afterwards for
+ * playback (about 2 MB). Per minute, not per interview: the officer decides
+ * how long it lasts, so a total would hint at the plan.
  */
-export function dataEstimateMb(targetDurationSec: number): { low: number; high: number } {
-  const minutes = Math.max(1, (targetDurationSec + 60) / 60);
-  return { low: Math.round(minutes * 5), high: Math.round(minutes * 7) };
-}
+export const DATA_MB_PER_MINUTE = { low: 5, high: 7 } as const;

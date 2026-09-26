@@ -15,7 +15,7 @@ import { CASE_PROBE_PREFIX, usableCaseQuestions } from "@/lib/domain/case-questi
 import { isOnScreen, type CaseNote, type NoteCategory } from "@/lib/domain/notes";
 import { officerFileText } from "@/lib/domain/officer-prompt";
 import type { PackId } from "@/lib/domain/credits";
-import { FREE_MOCK_SECONDS } from "@/lib/domain/entitlement";
+import { FREE_MOCK_MAX_SECONDS, FREE_MOCK_MAX_TOPICS } from "@/lib/domain/entitlement";
 import { MAX_CASES_PER_ACCOUNT, sameApplicant } from "@/lib/domain/identity";
 import { readinessTopics } from "@/lib/domain/readiness";
 import { env, features } from "@/lib/env";
@@ -275,11 +275,13 @@ export async function startSession(caseId: string, requestedMode: SessionMode) {
     ...(await planContext(supabase, caseRow, current.profile)),
   });
   if (ent.kind === "free") {
-    plan.targetDurationSec = FREE_MOCK_SECONDS;
-    // Two topics; if there's a question only they would get, it's one of them.
+    // Like any interview, the officer decides when to stop; a hidden ceiling bounds the cost.
+    plan.targetDurationSec = Math.min(plan.targetDurationSec, FREE_MOCK_MAX_SECONDS);
+    // Up to three topics, key ones first; if there's a question only they would get, it's one of them.
     const own = plan.probes.find((p) => p.probeId.startsWith(NOTE_PROBE_PREFIX) || p.probeId.startsWith(CASE_PROBE_PREFIX));
-    const rest = plan.probes.filter((p) => p !== own);
-    plan.probes = own ? [rest.find((p) => p.critical) ?? rest[0], own] : rest.slice(0, 2);
+    const rest = plan.probes.filter((p) => p !== own).sort((a, b) => Number(b.critical) - Number(a.critical));
+    const keep = rest.slice(0, own ? FREE_MOCK_MAX_TOPICS - 1 : FREE_MOCK_MAX_TOPICS);
+    plan.probes = own ? [...keep.slice(0, 1), own, ...keep.slice(1)] : keep;
   }
 
   // Sessions are written by the server only (users can't forge plans).

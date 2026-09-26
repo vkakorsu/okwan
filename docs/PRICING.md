@@ -29,7 +29,7 @@ All prices include **20% VAT** and can be paid with MTN MoMo, Telecel Cash, Airt
 
 | Pack | Price | What you get |
 |---|---|---|
-| **Free** | GH₵0 | Case Scan and what-to-bring list (no signup), one 90-second interview with a full debrief, 3 drills |
+| **Free** | GH₵0 | Case Scan and what-to-bring list (no signup), one mock interview with a full debrief (no advertised length; capped at 3 minutes and 3 topics internally), 3 drills |
 | **Prep** | **GH₵149** | **4 full interviews + 20 drills** |
 | **Full Prep** ⭐ | **GH₵299** | **10 full interviews + 60 drills** |
 | **Top-up** | GH₵79 | 3 interviews + 15 drills, added to what you have |

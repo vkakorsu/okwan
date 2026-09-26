@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { assessMic, assessNetwork, dataEstimateMb, type CheckResult } from "@/lib/domain/preflight";
+import { assessMic, assessNetwork, DATA_MB_PER_MINUTE, type CheckResult } from "@/lib/domain/preflight";
 
 /**
  * Before stepping up: say a line, hear it back, and time the connection.
@@ -21,7 +21,7 @@ function readPassed(): boolean {
 
 const TONE: Record<CheckResult["level"], string> = { good: "text-approved", warn: "text-accent", bad: "text-refused" };
 
-export function PreflightCheck({ targetDurationSec }: { targetDurationSec: number }) {
+export function PreflightCheck() {
   // Open by default until it has passed once on this device; the applicant can toggle it.
   const passedBefore = useSyncExternalStore(() => () => {}, readPassed, () => true);
   const [toggled, setOpen] = useState<boolean | null>(null);
@@ -32,7 +32,6 @@ export function PreflightCheck({ targetDurationSec }: { targetDurationSec: numbe
   const [net, setNet] = useState<CheckResult | null>(null);
   const [playback, setPlayback] = useState<string | null>(null);
   const cleanup = useRef<() => void>(() => {});
-  const data = dataEstimateMb(targetDurationSec);
 
   useEffect(() => () => cleanup.current(), []);
   useEffect(() => () => {
@@ -159,7 +158,7 @@ export function PreflightCheck({ targetDurationSec }: { targetDurationSec: numbe
       )}
       {net && <p className={`mt-2 ${TONE[net.level]}`}>Connection: {net.message}</p>}
       <p className="mt-3 text-xs text-muted">
-        This interview uses about {data.low}–{data.high} MB of data, including the recording saved for your playback.
+        Uses about {DATA_MB_PER_MINUTE.low}–{DATA_MB_PER_MINUTE.high} MB of data a minute, including the recording saved for your playback.
       </p>
     </div>
   );

@@ -193,7 +193,7 @@ export function QuickScan({ signedIn, ghsPerUsd }: { signedIn: boolean; ghsPerUs
               <p className="font-display text-2xl uppercase">Now say them out loud</p>
               <p className="mt-2 text-sm opacity-80">
                 Knowing the questions isn&rsquo;t the hard part. Answering them clearly, with an officer watching, is. Your first
-                90-second mock is free, and your answers here carry over.
+                mock interview is free, and your answers here carry over.
               </p>
               <Link
                 href={signedIn ? "/app" : "/signup"}
